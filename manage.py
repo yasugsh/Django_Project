@@ -3,7 +3,7 @@ import os
 import sys
 
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Django_Project.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "Django_Project.settings.dev")  # 开发环境的配置文件
     try:
         from django.core.management import execute_from_command_line
     except ImportError:
