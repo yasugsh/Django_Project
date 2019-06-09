@@ -10,11 +10,26 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
-import os
+import os, sys
+
+"""
+print(sys.path)
+['/home/python/Desktop/self_code/Phase_new/Django_Project',  # pycharm自动解释生成的当前项目导包根路径
+ '/home/python/Desktop/self_code/Phase_new/Django_Project',  # 当前项目的导包根路径
+ '/snap/pycharm-professional/136/helpers/pycharm_display', 
+ '/home/python/.virtualenvs/py3_django/lib/python36.zip', 
+ '/home/python/.virtualenvs/py3_django/lib/python3.6', 
+ '/home/python/.virtualenvs/py3_django/lib/python3.6/lib-dynload', 
+ '/usr/lib/python3.6', 
+ '/home/python/.virtualenvs/py3_django/lib/python3.6/site-packages', 
+ '/snap/pycharm-professional/136/helpers/pycharm_matplotlib_backend']
+ """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# /home/python/Desktop/self_code/Phase_new/Django_Project/Django_Project/apps
+sys.path.insert(0, os.path.join(BASE_DIR, "apps"))  # 添加导包路径到当前环境下的导包路径列表中
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -37,6 +52,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -238,3 +255,6 @@ LOGGING = {
         },
     }
 }
+
+# 指定本项目的用户模型类
+AUTH_USER_MODEL = 'users.User'
