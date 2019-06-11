@@ -53,7 +53,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'users',
+    # 'users',  # 使用基类AppConfig中的相关配置
+    'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
+    'contents.apps.ContentsConfig',
+    'verifications.apps.VerificationsConfig',
 ]
 
 MIDDLEWARE = [
@@ -197,8 +200,7 @@ CACHES = {
             "DECODE_RESPONSES": True
         }
     },
-    "session": {
-        # 后端RedisCache
+    "session": {  # session缓存
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
@@ -256,5 +258,5 @@ LOGGING = {
     }
 }
 
-# 指定本项目的用户模型类
+# (修改)指定本项目使用的用户模型类
 AUTH_USER_MODEL = 'users.User'
