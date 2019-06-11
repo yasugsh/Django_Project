@@ -209,7 +209,15 @@ CACHES = {
             "CONNECTION_POOL_KWARGS": {"max_connections": 100},
             "DECODE_RESPONSES": True
         }
-    }
+    },
+    "verify_code": {  # 图形验证码
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/2",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "myredis",
+        }
+    },
 }
 
 # 设置将session存储到redis中
