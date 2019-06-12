@@ -218,7 +218,7 @@ class Captcha(object):
         return self.captcha("")
 
 
-captcha = Captcha.instance()  # 单列对象
+captcha = Captcha.instance()  # 单例对象
 
 
 if __name__ == '__main__':

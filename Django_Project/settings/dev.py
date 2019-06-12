@@ -165,8 +165,8 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
-
+# 为True 数据库时区还是UTC
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -221,8 +221,8 @@ CACHES = {
 }
 
 # 设置将session存储到redis中
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "session"
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"  # 指定session的存储方式(内存)
+SESSION_CACHE_ALIAS = "session"  # 指定session储存位置
 
 # 日志输出器配置
 LOGGING = {

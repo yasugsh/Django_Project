@@ -201,7 +201,7 @@ var vm = new Vue({
                                 this.sms_code_tip = num + '秒';
                             }
                         }, 1000, 60)
-                    } else {
+                    } else {  // 频繁发送短信提示信息
                         if (response.data.code == '4001') {
                             this.error_image_code_message = response.data.errmsg;
                             this.error_image_code = true;

@@ -1,6 +1,5 @@
 import logging
 import re
-from django.conf import settings
 from django.db import DatabaseError
 from django.shortcuts import render, redirect
 from django.urls import reverse
@@ -10,7 +9,6 @@ from django.contrib.auth import login
 from django_redis import get_redis_connection
 
 from Django_Project.utils.response_code import RETCODE, err_msg
-from carts.utils import merge_cart_cookie_to_redis
 from .models import User
 
 
@@ -40,7 +38,7 @@ class RegisterView(View):
         password = query_dict.get('password')
         password2 = query_dict.get('password2')
         mobile = query_dict.get('mobile')
-        sms_code = query_dict.get('sms_code')
+        sms_code_client = query_dict.get('sms_code')
         allow = query_dict.get('allow')  # on或None
 
         """
@@ -62,12 +60,23 @@ class RegisterView(View):
         if allow != "on":
             return HttpResponseForbidden("请勾选用户协议")
 
-        # redis_conn = get_redis_connection('verify_code')
-        # # 获取redis中的短信验证码
-        # sms_code_server = redis_conn.get('sms_%s' % mobile)
-        #
-        # if sms_code_server is None or sms_code_server.decode() != sms_code:
-        #     return HttpResponseForbidden("短信验证码有误")
+        redis_conn = get_redis_connection('verify_code')
+        # 获取redis中的短信验证码
+        sms_code_server = redis_conn.get('sms_%s' % mobile)
+
+        if sms_code_server is None:
+            data = {
+                'sms_code_errmsg': '无效的短信验证码'
+            }
+            return JsonResponse(data)
+
+        redis_conn.delete('sms_%s' % mobile)
+
+        if sms_code_server.decode() != sms_code_client:
+            data = {
+                'sms_code_errmsg': '短信验证码有误'
+            }
+            return JsonResponse(data)
 
         # 新建用户，保存注册数据
         try:
