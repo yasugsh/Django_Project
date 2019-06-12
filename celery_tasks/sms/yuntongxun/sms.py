@@ -26,7 +26,7 @@ _softVersion = '2013-12-26'
 # 云通讯官方提供的发送短信代码实例
 # # 发送模板短信
 # # @param to 手机号码
-# # @param datas 内容数据 格式为数组['短信验证码','过期时间(分)']，如不需替换请填 ''
+# # @param datas 内容数据 格式为数组 例如：['12','34']，如不需替换请填 ''
 # # @param $tempId 模板Id
 #
 # def sendTemplateSMS(to, datas, tempId):
@@ -57,10 +57,11 @@ class CCP(object):
             cls._instance.rest.setAppId(_appId)
         return cls._instance
 
+
     def send_template_sms(self, to, datas, temp_id):
         """发送模板短信"""
         # @param to 手机号码
-        # @param datas 内容数据 格式为数组['短信验证码','过期时间(分)']，如不需替换请填 ''
+        # @param datas 内容数据 格式为数组 例如：{'12','34'}，如不需替换请填 ''
         # @param temp_id 模板Id
         result = self.rest.sendTemplateSMS(to, datas, temp_id)
         # 如果云通讯发送短信成功，返回的字典数据result中statuCode字段的值为"000000"

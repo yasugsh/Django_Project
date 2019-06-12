@@ -6,9 +6,10 @@ from django_redis import get_redis_connection
 from django.http import HttpResponse, JsonResponse
 
 from Django_Project.utils.response_code import RETCODE, err_msg
-from verifications.libs.yuntongxun.sms import *  # 导入云通讯中发送短信验证码的辅助类
 from .libs.captcha.captcha import captcha  # 导入生成验证码的对象
 from . import constants  # 导入常量文件
+# from verifications.libs.yuntongxun.sms import *  # 导入云通讯中发送短信验证码的辅助类
+from celery_tasks.sms.tasks import send_sms_code
 
 
 logger = logging.getLogger('django')
@@ -105,7 +106,9 @@ class SMSCodeView(View):
         通过CCP类对象发送短信验证码:
         CCP().send_template_sms('18218576911', ['123456', 5], 1)
         """
-        CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES // 60], constants.SEND_SMS_TEMPLATE_ID)
+        # CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES // 60], constants.SEND_SMS_TEMPLATE_ID)
+        # 添加发送短信的任务到Celery异步任务队列
+        send_sms_code.delay(mobile, sms_code)
 
         data = {
             'code': RETCODE.OK,
