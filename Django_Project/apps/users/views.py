@@ -8,6 +8,7 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.contrib.auth import login, authenticate, logout, mixins
 from django_redis import get_redis_connection
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
@@ -175,7 +176,9 @@ class LoginView(View):
             # 默认为两周，设置为None表示默认
             request.session.set_expiry(0)
 
-        response = redirect(reverse('contents:index'))  # 登录成功重定向到首页
+        next = request.GET.get('next', '/')
+        response = redirect(next)  # 登录成功重定向到next页或首页
+
         # 登录成功 用户名写入到cookie，有效期两周(前端获取到用于展示用户信息)
         # None表示在浏览器关闭就清除，0表示刚生成就清除了
         response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE if remembered else None)
@@ -196,20 +199,20 @@ class LogoutView(View):
         return response
 
 
-class UserInfoView(mixins.LoginRequiredMixin, View):
+class UserInfoView(View):
     """用户中心"""
 
     def get(self, request):
         """提供个人信息界面"""
 
         # 方式1、if判断用户是否登录
-        # if request.user.is_authenticated():
-        #     # 当前用户已经登录才展示用户中心
-        #     return render(request, 'user_center_info.html')
-        # else:
-        #     # 用户未登录重定向到登录页面
-        #     return redirect(reverse('users:login'))
+        if request.user.is_authenticated():
+            # 当前用户已经登录才展示用户中心
+            return render(request, 'user_center_info.html')
+        else:
+            # 用户未登录重定向到登录页面
+            return redirect('/login/?next=/info/')
 
         # 方式2、url中利用login_required装饰器判断用户是否登录
         # 方式3、通过继承LoginRequiredMixin判断用户是否登录
-        return render(request, 'user_center_info.html')
+        # return render(request, 'user_center_info.html')
