@@ -5,8 +5,9 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.contrib.auth import login, authenticate, logout, mixins
+from django.contrib.auth import login, authenticate
 from django_redis import get_redis_connection
+from django.conf import settings
 
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
@@ -95,7 +96,7 @@ class RegisterView(View):
         response = redirect('contents:index')  # 创建响应对象
 
         # 注册成功 用户名写入到cookie，有效期两周
-        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
+        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
         # merge_cart_cookie_to_redis(request, response)
 
         # 注册成功则重定向到index首页
@@ -177,6 +178,6 @@ class LoginView(View):
         response = redirect(reverse('contents:index'))  # 登录成功重定向到首页
         # 登录成功 用户名写入到cookie，有效期两周(前端获取到用于展示用户信息)
         # None表示在浏览器关闭就清除，0表示刚生成就清除了
-        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
+        response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE if remembered else None)
 
         return response
