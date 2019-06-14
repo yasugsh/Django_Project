@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
     'contents.apps.ContentsConfig',
     'verifications.apps.VerificationsConfig',
+    'oauth.apps.OauthConfig',
 ]
 
 MIDDLEWARE = [
