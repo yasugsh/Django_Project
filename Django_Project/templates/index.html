@@ -16,16 +16,38 @@
 		<div class="header">
 			<div class="welcome fl">欢迎来到美多商城!</div>
 			<div class="fr">
-				<div class="login_btn fl" v-if="username">
-					欢迎您：<em>[[ username ]]</em>
-					<span>|</span>
-					<a href="/logout/" class="quit">退出</a>
-				</div>
-				<div class="login_btn fl" v-else>
-					<a href="/login/">登录</a>
-					<span>|</span>
-					<a href="/register/">注册</a>
-				</div>
+                {# 首页用户名展示方案： #}
+                {# 1、模板中request变量直接渲染用户名进行展示,不方便首页静态化 #}
+{#                {% if user.is_authenticated %}#}
+{#                    <div class="login_btn fl">#}
+{#                        欢迎您：<em>{{ user.username }}</em>#}
+{#                        <span>|</span>#}
+{#                        <a href="/logout/" class="quit">退出</a>#}
+{#                    </div>#}
+{#                {% else %}#}
+{#                    <div class="login_btn fl">#}
+{#                        <a href="/login/">登录</a>#}
+{#                        <span>|</span>#}
+{#                        <a href="/register/">注册</a>#}
+{#                    </div>#}
+{#                {% endif %}#}
+
+                {# 2、发送axios请求获取用户信息进行展示,需要发送网络请求 #}
+{#                <div class="login_btn fl">#}
+                    {# ajax渲染进行局部刷新 #}
+{#                </div>#}
+
+                {# 3、注册或登录后,用户名写入到cookie中,Vue读取cookie渲染用户信息 #}
+                <div v-if="username" class="login_btn fl">
+                    欢迎您：<em>[[ username ]]</em>
+                    <span>|</span>
+                    <a href="/logout/" class="quit">退出</a>
+                </div>
+                <div v-else class="login_btn fl">
+                    <a href="/login/">登录</a>
+                    <span>|</span>
+                    <a href="/register/">注册</a>
+                </div>
 
 				<div class="user_link fl">
 					<span>|</span>

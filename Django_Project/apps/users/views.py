@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate, logout, mixins
 from django_redis import get_redis_connection
 
 from Django_Project.utils.response_code import RETCODE, err_msg
@@ -93,7 +93,9 @@ class RegisterView(View):
         # 登入用户，实现状态保持
         login(request, user)  # 存储用户的id到session中记录它的登录状态
         response = redirect('contents:index')  # 创建响应对象
-        # response.set_cookie('username', user.name, max_age=settings.SESSION_COOKIE_AGE)
+
+        # 注册成功 用户名写入到cookie，有效期两周
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
         # merge_cart_cookie_to_redis(request, response)
 
         # 注册成功则重定向到index首页
@@ -136,3 +138,45 @@ class MobileCountView(View):
             'count': count
         }
         return JsonResponse(data)
+
+
+class LoginView(View):
+    """用户名登录"""
+
+    def get(self, request):
+        """
+        提供注册页面
+        :param request: 请求对象
+        :return: 渲染登录界面
+        """
+        return render(request, 'login.html')
+
+    def post(self, request):
+        """
+        实现登录逻辑
+        :param request:
+        :return: 登录结果
+        """
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remembered = request.POST.get('remembered')
+
+        # django自带认证登录用户
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return render(request, 'login.html', {'account_errmsg': '用户名或密码错误'})
+
+        # 实现状态保持
+        login(request, user)
+        # 设置状态保持时长
+        if remembered is None:
+            # 如果没有勾选记住登录，session会话在浏览器关闭就结束
+            # 默认为两周，设置为None表示默认
+            request.session.set_expiry(0)
+
+        response = redirect(reverse('contents:index'))  # 登录成功重定向到首页
+        # 登录成功 用户名写入到cookie，有效期两周(前端获取到用于展示用户信息)
+        # None表示在浏览器关闭就清除，0表示刚生成就清除了
+        response.set_cookie('username', user.username, max_age=3600 * 24 * 14)
+
+        return response

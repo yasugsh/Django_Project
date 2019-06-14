@@ -14,6 +14,7 @@ var vm = new Vue({
     mounted(){
         // 获取购物车数据
         this.get_carts();
+        // 获取cookie中的用户名
         this.username=getCookie('username');
         console.log(this.username);
     },
