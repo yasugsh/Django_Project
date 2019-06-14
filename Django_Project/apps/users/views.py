@@ -199,20 +199,20 @@ class LogoutView(View):
         return response
 
 
-class UserInfoView(View):
+class UserInfoView(mixins.LoginRequiredMixin, View):
     """用户中心"""
 
     def get(self, request):
         """提供个人信息界面"""
 
         # 方式1、if判断用户是否登录
-        if request.user.is_authenticated():
-            # 当前用户已经登录才展示用户中心
-            return render(request, 'user_center_info.html')
-        else:
-            # 用户未登录重定向到登录页面
-            return redirect('/login/?next=/info/')
+        # if request.user.is_authenticated():
+        #     # 当前用户已经登录才展示用户中心
+        #     return render(request, 'user_center_info.html')
+        # else:
+        #     # 用户未登录重定向到登录页面
+        #     return redirect('/login/?next=/info/')
 
         # 方式2、url中利用login_required装饰器判断用户是否登录
         # 方式3、通过继承LoginRequiredMixin判断用户是否登录
-        # return render(request, 'user_center_info.html')
+        return render(request, 'user_center_info.html')

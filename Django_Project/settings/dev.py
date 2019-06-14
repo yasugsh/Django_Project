@@ -273,4 +273,4 @@ AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = ['users.utils.UsernameMobileAuthBackend']
 
 # 用户在未登录的状态下访问用户中心将被重定向到此url
-# LOGIN_URL = '/login/'
+LOGIN_URL = '/login/'
