@@ -1,0 +1,2 @@
+# 使用TimedJSONWebSignatureSerializer生成token的过期时间
+ACCESS_TOKEN_EXPIRES = 300

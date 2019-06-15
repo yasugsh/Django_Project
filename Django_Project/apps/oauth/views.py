@@ -8,7 +8,6 @@ from django.contrib.auth import login
 import re
 from django_redis import get_redis_connection
 from django.db import DatabaseError
-from urllib.parse import urlencode
 
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import OAuthQQUser
@@ -42,9 +41,10 @@ class QQAuthURLView(View):
             'login_url': qq_login_url
         }
         """
-        生成GET请求参数:
-        query_params = urlencode(data)
-        # query_params = 'code=RETCODE.OK&errmsg=OK&login_url=qq_login_url'
+        from urllib.parse import urlencode
+        # 生成GET请求参数:
+        # query_params = urlencode(data)
+        #   query_params --> 'code=RETCODE.OK&errmsg=OK&login_url=qq_login_url'
         """
         return JsonResponse(data)
 
@@ -75,4 +75,14 @@ class QQAuthUserView(View):
         except Exception as e:
             logger.error(e)
             return HttpResponseServerError('OAuth2.0认证失败')
+
+        try:
+            # 使用此openid查询QQ用户
+            oauth_user = OAuthQQUser.objects.get(openid=openid)
+        except OAuthQQUser.DoesNotExist:
+            # 如果没查到用户，表示扫码QQ未绑定过用户
+            # 将openid加密处理后响应给前端，用于后续绑定用户
+            token_openid = generate_openid_signature(openid)
+            context = {'openid': token_openid}
+            return render(request, 'oauth_callback.html', context)
         pass
