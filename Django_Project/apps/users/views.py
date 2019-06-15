@@ -215,4 +215,10 @@ class UserInfoView(mixins.LoginRequiredMixin, View):
 
         # 方式2、url中利用login_required装饰器判断用户是否登录
         # 方式3、通过继承LoginRequiredMixin判断用户是否登录
-        return render(request, 'user_center_info.html')
+        context = {
+            "username": request.user.username,
+            "mobile": request.user.mobile,
+            "email": request.user.email,
+            "email_active": request.user.email_active
+        }
+        return render(request, 'user_center_info.html', context)
