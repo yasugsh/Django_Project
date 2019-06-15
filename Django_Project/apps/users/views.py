@@ -9,9 +9,12 @@ from django.contrib.auth import login, authenticate, logout, mixins
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+import json
 
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
+from celery_tasks.email.tasks import send_verify_email
+from .utils import generate_verify_email_url
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -244,6 +247,10 @@ class EmailView(mixins.LoginRequiredMixin, View):
         except Exception as e:
             logger.error(e)
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '添加邮箱失败'})
+
+        verify_url = generate_verify_email_url(user)
+        # 异步任务发送验证邮件
+        send_verify_email.delay(email, verify_url)
 
         # 响应添加邮箱结果
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '添加邮箱成功'})
