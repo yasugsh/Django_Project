@@ -14,7 +14,7 @@ import json
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
 from celery_tasks.email.tasks import send_verify_email
-from .utils import generate_verify_email_url
+from .utils import generate_verify_email_url, check_verify_email_token
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -254,3 +254,29 @@ class EmailView(mixins.LoginRequiredMixin, View):
 
         # 响应添加邮箱结果
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '添加邮箱成功'})
+
+
+class VerifyEmailView(View):
+    """验证邮箱"""
+
+    def get(self, request):
+        # 接收查询参数
+        token = request.GET.get('token')
+        # 校验参数：判断token是否为空和过期
+        if not token:
+            return HttpResponseForbidden('缺少token')
+
+        # 提取user
+        user = check_verify_email_token(token)
+        if not user:
+            return HttpResponseForbidden('无效的token')
+
+        # 修改email_active的值为True
+        try:
+            user.email_active = True
+            user.save()
+        except Exception as e:
+            logger.error(e)
+            return HttpResponseServerError('激活邮箱失败')
+        # 返回邮箱验证结果
+        return redirect(reverse('users:info'))
