@@ -4,7 +4,7 @@ from django.db import DatabaseError
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseServerError
 from django.contrib.auth import login, authenticate, logout, mixins
 from django_redis import get_redis_connection
 from django.conf import settings
@@ -222,3 +222,28 @@ class UserInfoView(mixins.LoginRequiredMixin, View):
             "email_active": request.user.email_active
         }
         return render(request, 'user_center_info.html', context)
+
+class EmailView(mixins.LoginRequiredMixin, View):
+    """用户添加邮箱"""
+
+    def put(self, request):
+        json_dict = json.loads(request.body.decode())
+        email = json_dict.get('email')
+
+        if not email:
+            return JsonResponse({'code': RETCODE.NECESSARYPARAMERR, 'errmsg': '缺少email参数'})
+        if not re.match(r'^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$', email):
+            return JsonResponse({'code': RETCODE.EMAILERR, 'errmsg': 'email格式错误'})
+
+        # 获取当前登录用户
+        user = request.user
+        try:
+            # 修改email
+            user.email = email
+            user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '添加邮箱失败'})
+
+        # 响应添加邮箱结果
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '添加邮箱成功'})

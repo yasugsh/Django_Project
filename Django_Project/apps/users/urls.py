@@ -12,4 +12,5 @@ urlpatterns = [
     # login_required装饰器判断用户是否登录(未登录将重定向到配置项中LOGIN_URL指定的地址)
     # url(r'^info/$', login_required(views.UserInfoView.as_view()), name='info'),
     url(r'^info/$', views.UserInfoView.as_view(), name='info'),
+    url(r'^emails/$', views.EmailView.as_view(), name='emails'),
 ]
