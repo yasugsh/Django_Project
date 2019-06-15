@@ -96,7 +96,7 @@ class RegisterView(View):
         login(request, user)  # 存储用户的id到session中记录它的登录状态
         response = redirect('contents:index')  # 创建响应对象
 
-        # 注册成功 用户名写入到cookie，有效期两周
+        # 注册成功 用户名写入到cookie，设置有效期与session一致(两周)
         response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
         # merge_cart_cookie_to_redis(request, response)
 
