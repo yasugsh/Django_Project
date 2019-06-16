@@ -386,3 +386,88 @@ class CreateAddressView(mixins.LoginRequiredMixin, View):
 
         # 响应保存结果
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '新增地址成功', 'address': address_dict})
+
+
+class UpdateDeleteAddressView(View):
+    """修改和删除地址"""
+
+    def put(self, request, address_id):
+        """
+        修改收货地址
+        :param request:
+        :param address_id: 要修改的地址ID（路径参数）
+        :return: json
+        """
+        json_dict = json.loads(request.body.decode())
+        receiver = json_dict.get('receiver')  # 收货人
+        province_id = json_dict.get('province_id')
+        city_id = json_dict.get('city_id')
+        district_id = json_dict.get('district_id')
+        place = json_dict.get('place')  # 具体地址
+        mobile = json_dict.get('mobile')
+        tel = json_dict.get('tel')  # 固定电话
+        email = json_dict.get('email')
+
+        if not all([receiver, province_id, city_id, district_id, place, mobile]):
+            return HttpResponseForbidden('缺少必传参数')
+        if not re.match(r'^1[3-9]\d{9}$', mobile):
+            return HttpResponseForbidden('手机号码错误')
+        if tel:
+            if not re.match(r'^(0[0-9]{2,3}-)?([2-9][0-9]{6,7})+(-[0-9]{1,4})?$', tel):
+                return HttpResponseForbidden('固定号码错误')
+        if email:
+            if not re.match(r'^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$', email):
+                return HttpResponseForbidden('email有误')
+
+        try:
+            Address.objects.filter(id=address_id).update(
+                user=request.user,
+                title=receiver,
+                receiver=receiver,
+                province_id=province_id,
+                city_id=city_id,
+                district_id=district_id,
+                place=place,
+                mobile=mobile,
+                tel=tel,
+                email=email
+            )
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '修改收货地址失败'})
+
+        # 更新成功构造响应数据
+        address = Address.objects.get(id=address_id)
+        address_dict = {
+            "id": address.id,
+            "title": address.title,
+            "receiver": address.receiver,
+            "province": address.province.name,
+            "city": address.city.name,
+            "district": address.district.name,
+            "place": address.place,
+            "mobile": address.mobile,
+            "tel": address.tel,
+            "email": address.email
+        }
+
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '更新地址成功', 'address': address_dict})
+
+    def delete(self, request, address_id):
+        """
+        删除收货地址
+        :param request:
+        :param address_id: 要删除的地址ID（路径参数）
+        :return: json
+        """
+        try:
+            address = Address.objects.get(id=address_id)
+
+            # 逻辑删除
+            address.is_deleted = True
+            address.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '删除收货地址失败'})
+
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '删除收货地址成功'})

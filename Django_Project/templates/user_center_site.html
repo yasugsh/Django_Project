@@ -75,7 +75,7 @@
                         <a @click="show_edit_title(index)" class="edit_title"></a>
                     </div>
                     <em v-if="address.id===default_address_id">默认地址</em>
-                    <span @click="delete_address(index)">×</span>
+                    <span @click="delete_address(index)" class="del_site">×</span>
                 </div>
                 <ul class="site_list">
                     <li><span>收货人：</span><b>[[ address.receiver ]]</b></li>
