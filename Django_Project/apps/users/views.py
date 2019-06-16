@@ -501,3 +501,39 @@ class UpdateAddressTitleView(mixins.LoginRequiredMixin, View):
             logger.error(e)
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置地址标题失败'})
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置地址标题成功'})
+
+
+class ChangePasswordView(mixins.LoginRequiredMixin, View):
+    """修改密码"""
+
+    def get(self, request):
+        return render(request, 'user_center_pass.html')
+
+    def post(self, request):
+
+        old_password = request.POST.get('old_pwd')
+        new_password = request.POST.get('new_pwd')
+        affirm_new_password = request.POST.get('new_cpwd')
+
+        if not all([old_password, new_password, affirm_new_password]):
+            return HttpResponseForbidden('缺少必传参数')
+        if not request.user.check_password(old_password):
+            return render(request, 'user_center_pass.html', {'origin_pwd_errmsg': '原始密码错误'})
+        if not re.match(r'^[0-9a-zA-Z]{8,20}$', new_password):
+            return HttpResponseForbidden('请输入8-20位的密码')
+        if affirm_new_password != new_password:
+            return HttpResponseForbidden('两次输入的密码不一致')
+
+        try:
+            request.user.set_password(new_password)
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return render(request, 'user_center_pass.html', {'change_pwd_errmsg': '修改密码失败'})
+
+        # 修改密码成功后需要重新登录
+        logout(request)
+        response = redirect(reverse('users:login'))
+        response.delete_cookie('username')
+
+        return response

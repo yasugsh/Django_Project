@@ -19,4 +19,5 @@ urlpatterns = [
     url(r'^addresses/(?P<address_id>\d+)/$', views.UpdateDeleteAddressView.as_view()),
     url(r'addresses/(?P<address_id>\d+)/default/$', views.UpdateDefaultAddressView.as_view()),
     url(r'addresses/(?P<address_id>\d+)/title/$', views.UpdateAddressTitleView.as_view()),
+    url(r'^password/$', views.ChangePasswordView.as_view()),
 ]
