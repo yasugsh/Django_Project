@@ -388,7 +388,7 @@ class CreateAddressView(mixins.LoginRequiredMixin, View):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '新增地址成功', 'address': address_dict})
 
 
-class UpdateDeleteAddressView(View):
+class UpdateDeleteAddressView(mixins.LoginRequiredMixin, View):
     """修改和删除地址"""
 
     def put(self, request, address_id):
@@ -471,3 +471,33 @@ class UpdateDeleteAddressView(View):
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '删除收货地址失败'})
 
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '删除收货地址成功'})
+
+
+class UpdateDefaultAddressView(mixins.LoginRequiredMixin, View):
+    """设置默认地址"""
+
+    def put(self, request, address_id):
+        try:
+            address = Address.objects.get(id=address_id)
+            request.user.default_address = address
+            request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置默认地址失败'})
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置默认地址成功'})
+
+
+class UpdateAddressTitleView(mixins.LoginRequiredMixin, View):
+    """修改地址标题"""
+
+    def put(self, request, address_id):
+
+        title = json.loads(request.body.decode()).get('title')
+        try:
+            address = Address.objects.get(id=address_id)
+            address.title = title
+            address.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置地址标题失败'})
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置地址标题成功'})
