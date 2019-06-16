@@ -15,6 +15,8 @@ from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
 from celery_tasks.email.tasks import send_verify_email
 from .utils import generate_verify_email_url, check_verify_email_token
+from .models import Address
+from users import constants
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -286,4 +288,101 @@ class AddressView(mixins.LoginRequiredMixin, View):
     """用户收货地址"""
 
     def get(self, request):
-        return render(request, 'user_center_site.html')
+        """展示用户所有收货地址"""
+        login_user = request.user
+        addresses = Address.objects.filter(user=login_user, is_deleted=False)
+
+        address_dict_list = []
+        for address in addresses:
+            address_dict = {
+                "id": address.id,
+                "title": address.title,
+                "receiver": address.receiver,
+                "province": address.province.name,
+                "city": address.city.name,
+                "district": address.district.name,
+                "place": address.place,
+                "mobile": address.mobile,
+                "tel": address.tel,
+                "email": address.email
+            }
+            address_dict_list.append(address_dict)
+
+        context = {
+            'default_address_id': login_user.default_address_id,
+            'addresses': address_dict_list
+        }
+
+        return render(request, 'user_center_site.html', context)
+
+
+class CreateAddressView(mixins.LoginRequiredMixin, View):
+    """用户新增地址"""
+
+    def post(self, request):
+        # 判断是否超过地址上限：最多20个
+        # count = Address.objects.filter(user=request.user).count()
+        count = request.user.addresses.count()
+        if count >= constants.USER_ADDRESS_COUNTS_LIMIT:
+            return JsonResponse({'code': RETCODE.THROTTLINGERR, 'errmsg': '超过地址数量上限'})
+
+        json_dict = json.loads(request.body.decode())
+        receiver = json_dict.get('receiver')  # 收货人
+        province_id = json_dict.get('province_id')
+        city_id = json_dict.get('city_id')
+        district_id = json_dict.get('district_id')
+        place = json_dict.get('place')  # 具体地址
+        mobile = json_dict.get('mobile')
+        tel = json_dict.get('tel')  # 固定电话
+        email = json_dict.get('email')
+
+        if not all([receiver, province_id, city_id, district_id, place, mobile]):
+            return HttpResponseForbidden('缺少必传参数')
+        if not re.match(r'^1[3-9]\d{9}$', mobile):
+            return HttpResponseForbidden('手机号码错误')
+        if tel:
+            if not re.match(r'^(0[0-9]{2,3}-)?([2-9][0-9]{6,7})+(-[0-9]{1,4})?$', tel):
+                return HttpResponseForbidden('固定号码错误')
+        if email:
+            if not re.match(r'^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$', email):
+                return HttpResponseForbidden('email有误')
+
+        # 保存地址信息
+        try:
+            address = Address.objects.create(
+                user = request.user,
+                title = receiver,
+                receiver = receiver,
+                province_id = province_id,
+                city_id = city_id,
+                district_id = district_id,
+                place = place,
+                mobile = mobile,
+                tel = tel,
+                email = email
+            )
+
+            # 设置默认地址
+            if not request.user.default_address:
+                request.user.default_address = address
+                request.user.save()
+        except Exception as e:
+            logger.error(e)
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '新增地址失败'})
+
+        # 将新增的地址响应给前端进行局部刷新
+        address_dict = {
+            "id": address.id,
+            "title": address.title,
+            "receiver": address.receiver,
+            "province": address.province.name,
+            "city": address.city.name,
+            "district": address.district.name,
+            "place": address.place,
+            "mobile": address.mobile,
+            "tel": address.tel,
+            "email": address.email
+        }
+
+        # 响应保存结果
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '新增地址成功', 'address': address_dict})
