@@ -7,7 +7,9 @@ from Django_Project.utils.models import BaseModel
 class User(AbstractUser):
     """自定义用户模型类，添加字段"""
     mobile = models.CharField(max_length=11, unique=True, verbose_name="手机号")
+    # 表已建好需要再添加字段时必须指定默认值或指定为空
     email_active = models.BooleanField(default=False, verbose_name='邮箱验证状态')
+    # User与Address相互关联，必须创建related_name字段
     default_address = models.ForeignKey('Address', related_name='users', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='默认地址')
 
     class Meta:

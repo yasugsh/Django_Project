@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseServerError
-from django.contrib.auth import login, authenticate, logout, mixins
+from django.contrib.auth import login, authenticate, logout
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -17,6 +17,7 @@ from celery_tasks.email.tasks import send_verify_email
 from .utils import generate_verify_email_url, check_verify_email_token
 from .models import Address
 from users import constants
+from Django_Project.utils.views import LoginPassMixin
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -204,7 +205,7 @@ class LogoutView(View):
         return response
 
 
-class UserInfoView(mixins.LoginRequiredMixin, View):
+class UserInfoView(LoginPassMixin):
     """用户中心"""
 
     def get(self, request):
@@ -228,24 +229,26 @@ class UserInfoView(mixins.LoginRequiredMixin, View):
         }
         return render(request, 'user_center_info.html', context)
 
-class EmailView(mixins.LoginRequiredMixin, View):
+
+class EmailView(LoginPassMixin):
     """用户添加邮箱"""
 
     def put(self, request):
         json_dict = json.loads(request.body.decode())
         email = json_dict.get('email')
 
-        if not email:
-            return JsonResponse({'code': RETCODE.NECESSARYPARAMERR, 'errmsg': '缺少email参数'})
-        if not re.match(r'^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z0-9]{2,6}$', email):
-            return JsonResponse({'code': RETCODE.EMAILERR, 'errmsg': 'email格式错误'})
+        if not re.match(r'^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$', email):
+            return HttpResponseForbidden('邮箱格式错误')
 
         # 获取当前登录用户
         user = request.user
         try:
-            # 修改email
-            user.email = email
-            user.save()
+            # 每次都修改email
+            # user.email = email
+            # user.save()
+
+            # 只修改一次
+            User.objects.filter(username=user.username, email='').update(email=email)
         except Exception as e:
             logger.error(e)
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '添加邮箱失败'})
@@ -284,7 +287,7 @@ class VerifyEmailView(View):
         return redirect(reverse('users:info'))
 
 
-class AddressView(mixins.LoginRequiredMixin, View):
+class AddressView(LoginPassMixin):
     """用户收货地址"""
 
     def get(self, request):
@@ -316,7 +319,7 @@ class AddressView(mixins.LoginRequiredMixin, View):
         return render(request, 'user_center_site.html', context)
 
 
-class CreateAddressView(mixins.LoginRequiredMixin, View):
+class CreateAddressView(LoginPassMixin):
     """用户新增地址"""
 
     def post(self, request):
@@ -388,7 +391,7 @@ class CreateAddressView(mixins.LoginRequiredMixin, View):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '新增地址成功', 'address': address_dict})
 
 
-class UpdateDeleteAddressView(mixins.LoginRequiredMixin, View):
+class UpdateDeleteAddressView(LoginPassMixin):
     """修改和删除地址"""
 
     def put(self, request, address_id):
@@ -473,7 +476,7 @@ class UpdateDeleteAddressView(mixins.LoginRequiredMixin, View):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '删除收货地址成功'})
 
 
-class UpdateDefaultAddressView(mixins.LoginRequiredMixin, View):
+class UpdateDefaultAddressView(LoginPassMixin):
     """设置默认地址"""
 
     def put(self, request, address_id):
@@ -487,7 +490,7 @@ class UpdateDefaultAddressView(mixins.LoginRequiredMixin, View):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置默认地址成功'})
 
 
-class UpdateAddressTitleView(mixins.LoginRequiredMixin, View):
+class UpdateAddressTitleView(LoginPassMixin):
     """修改地址标题"""
 
     def put(self, request, address_id):
@@ -503,7 +506,7 @@ class UpdateAddressTitleView(mixins.LoginRequiredMixin, View):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置地址标题成功'})
 
 
-class ChangePasswordView(mixins.LoginRequiredMixin, View):
+class ChangePasswordView(LoginPassMixin):
     """修改密码"""
 
     def get(self, request):
