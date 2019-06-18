@@ -148,6 +148,7 @@ class MobileCountView(View):
         return JsonResponse(data)
 
 
+# GET&POST /login/
 class LoginView(View):
     """用户名登录"""
 
@@ -192,6 +193,7 @@ class LoginView(View):
         return response
 
 
+# GET /logout/
 class LogoutView(View):
     """退出登录"""
 
@@ -205,6 +207,7 @@ class LogoutView(View):
         return response
 
 
+# GET /info/
 class UserInfoView(LoginPassMixin):
     """用户中心"""
 
@@ -230,6 +233,7 @@ class UserInfoView(LoginPassMixin):
         return render(request, 'user_center_info.html', context)
 
 
+# PUT /emails/
 class EmailView(LoginPassMixin):
     """用户添加邮箱"""
 
@@ -261,6 +265,7 @@ class EmailView(LoginPassMixin):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '添加邮箱成功'})
 
 
+# GET /emails/verification/
 class VerifyEmailView(View):
     """验证邮箱"""
 
@@ -287,6 +292,7 @@ class VerifyEmailView(View):
         return redirect(reverse('users:info'))
 
 
+# GET /addresses/
 class AddressView(LoginPassMixin):
     """用户收货地址"""
 
@@ -304,6 +310,10 @@ class AddressView(LoginPassMixin):
                 "province": address.province.name,
                 "city": address.city.name,
                 "district": address.district.name,
+                # 在编辑地址框上显示当前的省市区
+                "province_id": address.province_id,
+                "city_id": address.city_id,
+                "district_id": address.district_id,
                 "place": address.place,
                 "mobile": address.mobile,
                 "tel": address.tel,
@@ -319,13 +329,14 @@ class AddressView(LoginPassMixin):
         return render(request, 'user_center_site.html', context)
 
 
+# POST /addresses/create/
 class CreateAddressView(LoginPassMixin):
     """用户新增地址"""
 
     def post(self, request):
-        # 判断是否超过地址上限：最多20个
-        # count = Address.objects.filter(user=request.user).count()
-        count = request.user.addresses.count()
+        # 判断是否超过有效地址上限：最多20个
+        # count = Address.objects.filter(user=request.user, is_deleted=False).count()
+        count = request.user.addresses.filter(is_deleted=False).count()
         if count >= constants.USER_ADDRESS_COUNTS_LIMIT:
             return JsonResponse({'code': RETCODE.THROTTLINGERR, 'errmsg': '超过地址数量上限'})
 
@@ -352,6 +363,7 @@ class CreateAddressView(LoginPassMixin):
 
         # 保存地址信息
         try:
+            # create()方法返回创建的模型对象
             address = Address.objects.create(
                 user = request.user,
                 title = receiver,
@@ -366,7 +378,7 @@ class CreateAddressView(LoginPassMixin):
             )
 
             # 设置默认地址
-            if not request.user.default_address:
+            if request.user.default_address is None:
                 request.user.default_address = address
                 request.user.save()
         except Exception as e:
@@ -381,6 +393,10 @@ class CreateAddressView(LoginPassMixin):
             "province": address.province.name,
             "city": address.city.name,
             "district": address.district.name,
+            # 在编辑地址框上显示当前的省市区
+            "province_id": address.province_id,
+            "city_id": address.city_id,
+            "district_id": address.district_id,
             "place": address.place,
             "mobile": address.mobile,
             "tel": address.tel,
@@ -391,6 +407,7 @@ class CreateAddressView(LoginPassMixin):
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '新增地址成功', 'address': address_dict})
 
 
+# PUT&DELETE /addresses/(?P<address_id>\d+)/
 class UpdateDeleteAddressView(LoginPassMixin):
     """修改和删除地址"""
 
@@ -423,24 +440,26 @@ class UpdateDeleteAddressView(LoginPassMixin):
                 return HttpResponseForbidden('email有误')
 
         try:
-            Address.objects.filter(id=address_id).update(
-                user=request.user,
-                title=receiver,
-                receiver=receiver,
-                province_id=province_id,
-                city_id=city_id,
-                district_id=district_id,
-                place=place,
-                mobile=mobile,
-                tel=tel,
-                email=email
-            )
-        except Exception as e:
-            logger.error(e)
+            # update()方法返回更新的表数量,数据库的update_time不变
+            # Address.objects.filter(...).update(...)
+
+            address = Address.objects.get(id=address_id, user=request.user, is_deleted=False)
+            address.user = request.user
+            address.title = receiver
+            address.receiver = receiver
+            address.province_id = province_id
+            address.city_id = city_id
+            address.district_id = district_id
+            address.place = place
+            address.mobile = mobile
+            address.tel = tel
+            address.email = email
+            # 通过模型.save()方法可以更新数据库的update_time
+            address.save()
+        except Address.DoesNotExist:
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '修改收货地址失败'})
 
         # 更新成功构造响应数据
-        address = Address.objects.get(id=address_id)
         address_dict = {
             "id": address.id,
             "title": address.title,
@@ -448,6 +467,10 @@ class UpdateDeleteAddressView(LoginPassMixin):
             "province": address.province.name,
             "city": address.city.name,
             "district": address.district.name,
+            # 在编辑地址框上显示当前的省市区
+            "province_id": address.province_id,
+            "city_id": address.city_id,
+            "district_id": address.district_id,
             "place": address.place,
             "mobile": address.mobile,
             "tel": address.tel,
@@ -464,32 +487,18 @@ class UpdateDeleteAddressView(LoginPassMixin):
         :return: json
         """
         try:
-            address = Address.objects.get(id=address_id)
+            address = Address.objects.get(id=address_id, user=request.user, is_deleted=False)
 
             # 逻辑删除
             address.is_deleted = True
             address.save()
-        except Exception as e:
-            logger.error(e)
+        except Address.DoesNotExist:
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '删除收货地址失败'})
 
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '删除收货地址成功'})
 
 
-class UpdateDefaultAddressView(LoginPassMixin):
-    """设置默认地址"""
-
-    def put(self, request, address_id):
-        try:
-            address = Address.objects.get(id=address_id)
-            request.user.default_address = address
-            request.user.save()
-        except Exception as e:
-            logger.error(e)
-            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置默认地址失败'})
-        return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置默认地址成功'})
-
-
+# PUT /addresses/(?P<address_id>\d+)/title/
 class UpdateAddressTitleView(LoginPassMixin):
     """修改地址标题"""
 
@@ -497,15 +506,29 @@ class UpdateAddressTitleView(LoginPassMixin):
 
         title = json.loads(request.body.decode()).get('title')
         try:
-            address = Address.objects.get(id=address_id)
+            address = Address.objects.get(id=address_id, user=request.user, is_deleted=False)
             address.title = title
             address.save()
-        except Exception as e:
-            logger.error(e)
+        except Address.DoesNotExist:
             return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置地址标题失败'})
         return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置地址标题成功'})
 
 
+# PUT /addresses/(?P<address_id>\d+)/default/
+class UpdateDefaultAddressView(LoginPassMixin):
+    """设置默认地址"""
+
+    def put(self, request, address_id):
+        try:
+            address = Address.objects.get(id=address_id, user=request.user, is_deleted=False)
+            request.user.default_address = address
+            request.user.save()
+        except Address.DoesNotExist:
+            return JsonResponse({'code': RETCODE.DBERR, 'errmsg': '设置默认地址失败'})
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': '设置默认地址成功'})
+
+
+# GET&POST /password/
 class ChangePasswordView(LoginPassMixin):
     """修改密码"""
 
@@ -535,6 +558,8 @@ class ChangePasswordView(LoginPassMixin):
             return render(request, 'user_center_pass.html', {'change_pwd_errmsg': '修改密码失败'})
 
         # 修改密码成功后需要重新登录
+        # return redirect(reverse('users:logout'))
+
         logout(request)
         response = redirect(reverse('users:login'))
         response.delete_cookie('username')

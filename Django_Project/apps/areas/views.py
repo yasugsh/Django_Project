@@ -12,6 +12,7 @@ from . import constants
 logger = logging.getLogger('django')
 
 
+# GET /areas/
 class AreasView(View):
     """省市区数据"""
 

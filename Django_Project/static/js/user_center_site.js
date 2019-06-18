@@ -207,8 +207,9 @@ var vm = new Vue({
                     })
                         .then(response => {
                             if (response.data.code == '0') {
-                                // location.reload();
-                                // 局部刷新界面：展示所有地址信息，将新的地址添加到头部
+                                // 局部刷新界面：展示所有地址信息，
+                                location.reload();
+                                // 将新的地址添加到头部
                                 this.addresses.splice(0, 0, response.data.address);
                                 this.is_show_edit = false;
                             } else if (response.data.code == '4101') {
@@ -239,6 +240,8 @@ var vm = new Vue({
                             if (response.data.code == '0') {
                                 this.addresses[this.editing_address_index] = response.data.address;
                                 this.is_show_edit = false;
+                                // 局部刷新界面：展示所有地址信息(排序)
+                                location.reload();
                             } else if (response.data.code == '4101') {
                                 location.href = '/login/?next=/addresses/';
                             } else if (response.data.code == '4007') {
@@ -331,6 +334,8 @@ var vm = new Vue({
                             // 更新地址title
                             this.addresses[index].title = this.input_title;
                             this.cancel_title();
+                            // 局部刷新界面：展示所有地址信息(排序)
+                            location.reload();
                         } else if (response.data.code == '4101') {
                             location.href = '/login/?next=/addresses/';
                         } else {

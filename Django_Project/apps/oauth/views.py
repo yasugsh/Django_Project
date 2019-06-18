@@ -18,6 +18,7 @@ from users.models import User
 logger = logging.getLogger('django')
 
 
+# GET /qq/authorization/
 class QQAuthURLView(View):
     """提供QQ登录页面网址
     https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=xxx&redirect_uri=xxx&state=xxx
@@ -49,6 +50,7 @@ class QQAuthURLView(View):
         return JsonResponse(data)
 
 
+# GET&POST /oauth_callback/
 class QQAuthUserView(View):
     """用户扫码登录后的回调处理
     http://www.meiduo.site:8000/oauth_callback/?code=AE263F12675FA79185B54870D79730A7&state=%2F
