@@ -129,7 +129,7 @@ DATABASES = {
         'PORT': 3306,  # 数据库端口
         'USER': 'yin',  # 数据库用户名
         'PASSWORD': 'mysql',  # 数据库用户密码
-        'NAME': 'django_project'  # 数据库名字
+        'NAME': 'Django_Project'  # 数据库名字
     },
 }
 
@@ -291,3 +291,10 @@ EMAIL_HOST_USER = 'yq976093462@163.com'  # 授权的邮箱
 EMAIL_HOST_PASSWORD = '567cnmbdwy163'  # 邮箱授权时获得的密码，非注册登录密码
 EMAIL_FROM = '<yq976093462@163.com>'  # 发件人抬头
 EMAIL_VERIFY_URL = 'http://www.meiduo.site:8000/emails/verification/'
+
+# 指定自定义的Django文件存储类
+DEFAULT_FILE_STORAGE = 'Django_Project.utils.fastdfs.fdfs_storage.FastDFSStorage'
+
+# FastDFS相关参数
+# FDFS_BASE_URL = 'http://192.168.19.132:8888/'
+FDFS_BASE_URL = 'http://image.meiduo.site:8888/'
