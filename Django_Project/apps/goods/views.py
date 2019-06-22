@@ -121,3 +121,64 @@ class HotGoodsView(View):
             'errmsg': 'OK',
             'hot_skus': hot_skus
         })
+
+
+# GET /detail/(?P<sku_id>\d+)/
+class DetailView(View):
+    """商品详情页"""
+
+    def get(self, request, sku_id):
+
+        # 获取当前sku的信息
+        try:
+            sku = SKU.objects.get(id=sku_id)
+        except SKU.DoesNotExist:
+            return render(request, '404.html')
+
+        # 查询所有商品的分类
+        categories = get_categories()
+        # 查询面包屑导航
+        breadcrumb = get_breadcrumb(sku.category)
+
+        # 获取当前sku(16)的所有具体规格对象(颜色6：黑16, 版本7:128G21)
+        current_sku_spec_qs = sku.specs.order_by('spec_id')
+        # 此sku所有规格的id列表
+        current_sku_option_ids = []
+        for current_sku_spec in current_sku_spec_qs:
+            current_sku_option_ids.append(current_sku_spec.option_id)  # [16, 21]
+
+        # 获取当前spu下的所有sku
+        temp_sku_qs = sku.spu.sku_set.all()
+        spec_sku_map = {}  # 用来构造sku规格仓库
+        for temp_sku in temp_sku_qs:
+            # 查询所有sku的具体规格对象
+            temp_spec_qs = temp_sku.specs.order_by('spec_id')
+            temp_sku_option_ids = []  # 用来包装sku所有规格的id
+            for temp_spec in temp_spec_qs:
+                temp_sku_option_ids.append(temp_spec.option_id)
+            spec_sku_map[tuple(temp_sku_option_ids)] = temp_sku.id  # {(16,20): 15, (16,21): 16}
+
+        # 获取当前spu(3)中的所有规格对象(颜色6, 版本7)
+        spu_spec_qs = sku.spu.specs.order_by('id')
+        for index, spec in enumerate(spu_spec_qs):
+            # 获取当前spu规格(6)中的所有选项对象
+            spec_option_qs = spec.options.all()  # (13,14,15,16)
+            # 复制一个新的当前sku(16)的规格id列表
+            temp_option_ids = current_sku_option_ids[:]  # [16,21]
+            for option in spec_option_qs:
+                temp_option_ids[index] = option.id  # 13
+                # 给每个spu选项对象绑定sku_id属性
+                option.sku_id = spec_sku_map.get(tuple(temp_option_ids))  # sku16
+            # 把spu规格下的所有选项绑定到规格对象的spec_options属性上
+            spec.spec_options = spec_option_qs
+
+        context = {
+            'categories': categories,
+            'breadcrumb': breadcrumb,
+            'sku': sku,
+            'category': sku.category,
+            'spu': sku.spu,
+            'spec_qs': spu_spec_qs  # 当前spu的所有规格数据
+        }
+
+        return render(request, 'detail.html', context)
