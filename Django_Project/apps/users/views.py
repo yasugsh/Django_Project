@@ -18,6 +18,7 @@ from .utils import generate_verify_email_url, check_verify_email_token
 from .models import Address
 from users import constants
 from Django_Project.utils.views import LoginPassMixin
+from goods.models import SKU
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -231,6 +232,60 @@ class UserInfoView(LoginPassMixin):
             "email_active": request.user.email_active
         }
         return render(request, 'user_center_info.html', context)
+
+
+# GET&POST /browse_histories/
+class UserBrowseHistory(View):
+    """用户浏览记录"""
+
+    def get(self, request):
+        """获取用户浏览记录"""
+        if request.user.is_authenticated:
+            redis_conn = get_redis_connection('history')
+            sku_ids = redis_conn.lrange('history_%s' % request.user.id, 0, -1)
+
+            skus = []
+            for sku_id in sku_ids:
+                sku = SKU.objects.get(id=sku_id)
+                skus.append({
+                    'id': sku.id,
+                    'name': sku.name,
+                    'default_image_url': sku.default_image.url,
+                    'price': sku.price
+                })
+
+            return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'skus': skus})
+        else:
+            return JsonResponse({'code': RETCODE.SESSIONERR, 'errmsg': '用户未登录', 'skus': []})
+
+    def post(self, request):
+        """保存用户浏览记录"""
+
+        # 只有登录用户才保存浏览记录
+        if request.user.is_authenticated:
+            json_dict = json.loads(request.body.decode())
+            sku_id = json_dict.get('sku_id')
+
+            try:
+                SKU.objects.get(id=sku_id)
+            except SKU.DoesNotExist:
+                return HttpResponseForbidden('sku不存在')
+
+            # 保存用户浏览数据到redis,列表形式存储
+            user_id = request.user.id
+            redis_conn = get_redis_connection('history')
+            pl = redis_conn.pipeline()
+            # 去重count=0,移除列表中与sku_id相等的所有元素
+            pl.lrem('history_%s' % user_id, 0, sku_id)
+            # 加到列表最前
+            pl.lpush('history_%s' % user_id, sku_id)
+            # 截取前5个sku_id进行保存
+            pl.ltrim('history_%s' % user_id, 0, 4)
+            pl.execute()
+
+            return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
+        else:
+            return JsonResponse({'code': RETCODE.SESSIONERR, 'errmsg': '用户未登录'})
 
 
 # PUT /emails/
