@@ -2,8 +2,9 @@ from django.shortcuts import render
 from django.views.generic.base import View
 from django import http
 from django.core.paginator import Paginator, EmptyPage
+from django.utils import timezone
 
-from .models import GoodsCategory, SKU
+from .models import GoodsCategory, SKU, GoodsVisitCount
 from contents.utils import get_categories
 from .utils import get_breadcrumb
 from . import constants
@@ -182,3 +183,26 @@ class DetailView(View):
         }
 
         return render(request, 'detail.html', context)
+
+
+# POST /visit/(?P<category_id>\d+)/
+class DetailVisitView(View):
+    """详情页三级类别商品的日访问量"""
+
+    def post(self, request, category_id):
+        try:
+            category = GoodsCategory.objects.get(id=category_id)
+        except GoodsCategory.DoesNotExist:
+            return http.HttpResponseForbidden('无效的请求参数')
+
+        today_date = timezone.now()  # 获取此时的日期及时间
+        try:
+            # 查询此类别商品当天有没有被访问过
+            category_visit = GoodsVisitCount.objects.get(date=today_date, category=category)
+        except GoodsVisitCount.DoesNotExist:
+            # 如果没有访问过就创建一个新记录
+            category_visit = GoodsVisitCount(category=category)
+        category_visit.count += 1
+        category_visit.save()
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
