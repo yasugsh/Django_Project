@@ -229,6 +229,14 @@ CACHES = {
             "PASSWORD": "myredis",
         }
     },
+    "carts": {  # 登录用户购物车数据
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/4",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "myredis",
+        }
+    },
 }
 
 # 设置将session存储到redis中

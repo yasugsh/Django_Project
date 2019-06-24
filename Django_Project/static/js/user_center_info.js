@@ -82,7 +82,8 @@ var vm = new Vue({
                 .then(response => {
                     this.histories = response.data.skus;
                     for(var i=0; i<this.histories.length; i++){
-                        this.histories[i].url = '/goods/' + this.histories[i].id + '.html';
+                        this.histories[i].url = '/detail/' + this.histories[i].id + '/';  // 开发阶段
+                        // this.histories[i].url = '/goods/' + this.histories[i].id + '.html';  // 生产阶段
                     }
                 })
                 .catch(error => {
