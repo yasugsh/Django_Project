@@ -286,3 +286,41 @@ class CartsSelectAllView(View):
             response.set_cookie('carts', cart_str, constants.CARTS_COOKIE_EXPIRES)
 
         return response
+
+
+# GET /carts/simple/
+class CartsSimpleView(View):
+    """页面上简单购物车数据"""
+
+    def get(self, request):
+
+        if request.user.is_authenticated:
+            redis_conn = get_redis_connection('carts')
+            sku_and_count = redis_conn.hgetall('carts_%s' % request.user.id)
+            selected_set = redis_conn.smembers('selected_%s' % request.user.id)
+
+            # 将redis中购物车数据构造成cookie中的格式，方便统一查询
+            cart_dict = {}
+            for sku_id, count in sku_and_count.items():
+                cart_dict[int(sku_id)] = {
+                    'count': int(count),
+                    'selected': sku_id in selected_set
+                }
+        else:
+            cart_str = request.COOKIES.get('carts')
+            if cart_str:
+                cart_dict = pickle.loads(base64.b64decode(cart_str.encode()))
+            else:
+                cart_dict = {}
+
+        cart_skus = []
+        skus = SKU.objects.filter(id__in=cart_dict.keys())
+        for sku in skus:
+            cart_skus.append({
+                'id': sku.id,
+                'name': sku.name,
+                'count': cart_dict.get(sku.id).get('count'),
+                'default_image_url': sku.default_image.url
+            })
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'cart_skus': cart_skus})

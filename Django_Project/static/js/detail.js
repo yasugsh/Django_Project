@@ -161,7 +161,7 @@ var vm = new Vue({
                     if (response.data.code == '0') {
                         alert('添加购物车成功');
                         this.cart_total_count += this.sku_count;
-                        this.get_carts();
+                        this.get_carts();  // 添加成功即刷新简易购物车
                     } else { // 参数错误
                         alert(response.data.errmsg);
                     }
