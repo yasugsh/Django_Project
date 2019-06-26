@@ -13,6 +13,7 @@ from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import OAuthQQUser
 from .utils import generate_openid_signature, check_openid_signature
 from users.models import User
+from carts.utils import merge_cart_cookie_to_redis
 
 
 logger = logging.getLogger('django')
@@ -96,6 +97,9 @@ class QQAuthUserView(View):
         next = request.GET.get('state', '/')
         response = redirect(next)
         response.set_cookie('username', qq_user.username, max_age=settings.SESSION_COOKIE_AGE)
+
+        # 登录成功合并购物车数据
+        merge_cart_cookie_to_redis(request, response)
         return response
 
     def post(self, request):
@@ -150,4 +154,7 @@ class QQAuthUserView(View):
         next = request.GET.get('state', '/')
         response = redirect(next)
         response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE)
+
+        # 登录成功合并购物车数据
+        merge_cart_cookie_to_redis(request, response)
         return response

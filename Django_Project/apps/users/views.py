@@ -19,6 +19,7 @@ from .models import Address
 from users import constants
 from Django_Project.utils.views import LoginPassMixin
 from goods.models import SKU
+from carts.utils import merge_cart_cookie_to_redis
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -187,7 +188,9 @@ class LoginView(View):
         next = request.GET.get('next', '/')
         response = redirect(next)  # 登录成功重定向到next页或首页
 
-        # 登录成功 用户名写入到cookie，有效期两周(前端获取到用于展示用户信息)
+        # 登录成功合并购物车数据
+        merge_cart_cookie_to_redis(request, response)
+        # 用户名写入到cookie，有效期两周(前端获取到用于展示用户信息)
         # None表示在浏览器关闭就清除，0表示刚生成就清除了
         response.set_cookie('username', user.username, max_age=settings.SESSION_COOKIE_AGE if remembered else None)
 
