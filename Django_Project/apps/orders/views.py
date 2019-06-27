@@ -185,3 +185,26 @@ class OrdersCommit(LoginPassMixin):
         pl.execute()
 
         return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '下单成功', 'order_id': order.order_id})
+
+
+# GET /orders/success/
+class OrderSuccessView(LoginPassMixin):
+    """提交订单成功"""
+
+    def get(self, request):
+        order_id = request.GET.get('order_id')
+        payment_amount = request.GET.get('payment_amount')
+        pay_method = request.GET.get('pay_method')
+
+        try:
+            OrderInfo.objects.get(order_id=order_id, pay_method=pay_method, total_amount=payment_amount, user=request.user)
+        except OrderInfo.DoesNotExist:
+            return http.HttpResponseForbidden('订单有误')
+
+        context = {
+            'order_id': order_id,
+            'payment_amount': payment_amount,
+            'pay_method': pay_method
+        }
+
+        return render(request, 'order_success.html', context)
