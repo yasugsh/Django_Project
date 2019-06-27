@@ -4,12 +4,13 @@ from django.db import DatabaseError
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
-from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, HttpResponseServerError, HttpResponseNotFound
 from django.contrib.auth import login, authenticate, logout
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 import json
+from django.core.paginator import Paginator, EmptyPage
 
 from Django_Project.utils.response_code import RETCODE, err_msg
 from .models import User
@@ -20,6 +21,7 @@ from users import constants
 from Django_Project.utils.views import LoginPassMixin
 from goods.models import SKU
 from carts.utils import merge_cart_cookie_to_redis
+from orders.models import OrderInfo, OrderGoods
 
 
 logger = logging.getLogger('django')  # 创建日志输出器对象
@@ -289,6 +291,79 @@ class UserBrowseHistory(View):
             return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
         else:
             return JsonResponse({'code': RETCODE.SESSIONERR, 'errmsg': '用户未登录'})
+
+
+# GET /orders/info/(?P<page_num>\d+)/
+class UserOrdersInfoView(LoginPassMixin):
+    """用户订单信息展示"""
+
+    def get(self, request, page_num):
+        user = request.user
+
+        # 获取当前用户所有订单
+        orders = OrderInfo.objects.filter(user_id=user.id).order_by('-update_time')
+
+        # 遍历订单查询集
+        for order in orders:
+            # 获取当前订单中的所有商品
+            order_goods = OrderGoods.objects.filter(order_id=order.order_id)
+
+            # 获取到每个sku对应的购买数量及价格
+            sku_dict = {}
+            for good in order_goods:
+                sku_dict[good.sku_id] = {
+                    'count': good.count,
+                    'price': good.price
+                }
+
+            # 查询出当前订单中所有的sku
+            sku_query_set = SKU.objects.filter(id__in=sku_dict.keys())
+
+            # 为SKU模型添加新属性，用作模板渲染
+            order.sku_list = []
+            for sku in sku_query_set:
+                sku.count = sku_dict[sku.id]['count']
+                sku.amount = sku_dict[sku.id]['price'] * sku.count
+                order.sku_list.append(sku)
+
+            # 对模板变量order.pay_method赋值
+            if order.pay_method == OrderInfo.PAY_METHODS_ENUM["CASH"]:
+                order.pay_method_name = OrderInfo.PAY_METHOD_CHOICES[0][1]
+            else:
+                order.pay_method_name = OrderInfo.PAY_METHOD_CHOICES[1][1]
+
+            # 对模板变量order.status赋值
+            if order.status == OrderInfo.ORDER_STATUS_ENUM["UNPAID"]:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[0][1]
+            elif order.status == OrderInfo.ORDER_STATUS_ENUM["UNSEND"]:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[1][1]
+            elif order.status == OrderInfo.ORDER_STATUS_ENUM["UNRECEIVED"]:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[2][1]
+            elif order.status == OrderInfo.ORDER_STATUS_ENUM["UNCOMMENT"]:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[3][1]
+            elif order.status == OrderInfo.ORDER_STATUS_ENUM["FINISHED"]:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[4][1]
+            else:
+                order.status_name = OrderInfo.ORDER_STATUS_CHOICES[5][1]
+
+        # 创建分页器：每页N条记录
+        paginator = Paginator(orders, constants.ORDER_LIST_LIMIT)
+        # 获取总页数
+        total_page = paginator.num_pages
+        try:
+            # 获取当前页的所有订单数据
+            page_orders = paginator.page(page_num)
+        except EmptyPage:
+            # 如果page_num参数不正确，默认给用户404
+            return HttpResponseNotFound('空页面')
+
+        context = {
+            'page_orders': page_orders,
+            'total_page': total_page,  # 总页数
+            'page_num': page_num,  # 当前页码
+        }
+
+        return render(request, 'user_center_order.html', context)
 
 
 # PUT /emails/
