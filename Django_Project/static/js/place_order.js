@@ -31,7 +31,8 @@ var vm = new Vue({
                 var url = this.host + '/orders/commit/';
                 axios.post(url, {
                         address_id: this.nowsite,
-                        pay_method: this.pay_method
+                        // html接收过来的是字符串，需要转成int类型传给后端
+                        pay_method: parseInt(this.pay_method)
                     }, {
                         headers:{
                             'X-CSRFToken':getCookie('csrftoken')
