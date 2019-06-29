@@ -208,3 +208,82 @@ class OrderSuccessView(LoginPassMixin):
         }
 
         return render(request, 'order_success.html', context)
+
+
+# GET /orders/comment/?order_id=xxx
+class OrderCommentView(LoginPassMixin):
+    """订单评论"""
+
+    def get(self, request):
+        """未评价商品进行评价"""
+
+        order_id = request.GET.get('order_id')
+        uncomment_goods = OrderGoods.objects.filter(order_id=order_id, is_commented=False)
+
+        uncomment_goods_list = []
+        for uncomment_good in uncomment_goods:
+            uncomment_goods_list.append({
+                'order_id': order_id,
+                'sku_id': uncomment_good.sku.id,
+                'default_image_url': uncomment_good.sku.default_image.url,
+                'name': uncomment_good.sku.name,
+                'price': str(uncomment_good.price),
+                'display_score': uncomment_good.score
+            })
+
+        context = {
+            'uncomment_goods_list': uncomment_goods_list
+        }
+        return render(request, 'goods_judge.html', context)
+
+    def post(self, request):
+        """保存评价信息"""
+
+        json_dict = json.loads(request.body.decode())
+        order_id = json_dict.get('order_id')
+        sku_id = json_dict.get('sku_id')
+        comment = json_dict.get('comment')
+        score = json_dict.get('score')
+        is_anonymous = json_dict.get('is_anonymous')
+
+        if not all([order_id, sku_id, comment, score]):
+            return http.JsonResponse({'code': RETCODE.NECESSARYPARAMERR, 'errmsg': "请填写您的评价"})
+        if score not in [choices[0] for choices in OrderGoods.SCORE_CHOICES]:
+            return http.JsonResponse({'code': RETCODE.PARAMERR, 'errmsg': '参数错误'})
+
+        user = request.user
+        try:
+            order = OrderInfo.objects.get(order_id=order_id, user_id=user.id)
+        except OrderInfo.DoesNotExist:
+            return http.JsonResponse({'code': RETCODE.PARAMERR, 'errmsg': '参数order_id错误'})
+        try:
+            sku = SKU.objects.get(id=sku_id)
+        except SKU.DoesNotExist:
+            return http.JsonResponse({'code': RETCODE.PARAMERR, 'errmsg': '参数sku_id错误'})
+
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                OrderGoods.objects.filter(sku_id=sku.id, order_id=order.order_id, is_commented=False).update(
+                    comment=comment, score=score, is_anonymous=is_anonymous, is_commented = True)
+                # sku.ordergoods_set.comment = comment
+                # sku.ordergoods_set.score = score
+                # sku.ordergoods_set.is_anonymous = is_anonymous
+                # sku.ordergoods_set.is_commented = True
+                # sku.ordergoods_set[0].save()
+                sku.comments += 1
+                sku.save()
+                sku.spu.comments += 1
+                sku.spu.save()
+            except Exception as e:
+                logger.error(e)
+                transaction.savepoint_rollback(save_id)
+                return http.JsonResponse({'code': RETCODE.DBERR, 'errmsg': '发表评价失败'})
+            transaction.savepoint_commit(save_id)
+
+        uncomment_goods = OrderGoods.objects.filter(order_id=order_id, is_commented=False)
+        if not uncomment_goods:
+            OrderInfo.objects.filter(order_id=order_id, user_id=user.id).update(
+                status=OrderInfo.ORDER_STATUS_ENUM['UNRECEIVED'])
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': '发表评价成功'})

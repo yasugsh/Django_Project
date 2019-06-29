@@ -9,6 +9,7 @@ from contents.utils import get_categories
 from .utils import get_breadcrumb
 from . import constants
 from Django_Project.utils.response_code import RETCODE
+from orders.models import OrderGoods
 
 
 # GET /list/(?P<category_id>\d+)/(?P<page_num>\d+)/?sort=排序方式
@@ -183,6 +184,38 @@ class DetailView(View):
         }
 
         return render(request, 'detail.html', context)
+
+
+# GET /comments/(?P<sku_id>\d+)/
+class CommentsView(View):
+    """商品详情页评论数据"""
+
+    def get(self, request, sku_id):
+        order_goods = OrderGoods.objects.filter(sku_id=sku_id, is_commented=True).order_by('-update_time')
+
+        # 构建商品评论列表
+        """
+        [
+            {
+                'username': 'zhangsan',
+                'comment': '手机不错'
+            },
+            {
+                'username': 'xxx',
+                'comment': 'xxx'
+            },
+        ]
+        """
+        comment_list = []
+        for order_good in order_goods:
+            username = order_good.order.user.username
+
+            comment_list.append({
+                'username': username if order_good.is_anonymous is False else '匿名用户',
+                'comment': order_good.comment
+            })
+
+        return http.JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK', 'comment_list': comment_list})
 
 
 # POST /visit/(?P<category_id>\d+)/
