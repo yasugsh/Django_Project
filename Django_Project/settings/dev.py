@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'areas.apps.AreasConfig',
     'goods.apps.GoodsConfig',
     'orders.apps.OrdersConfig',
+    'payment.apps.PaymentConfig',
 ]
 
 MIDDLEWARE = [
@@ -331,3 +332,13 @@ HAYSTACK_CONNECTIONS = {
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 # 查询出的数据每页显示条数，haystack.views中已设置默认为20条
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 5
+
+# 支付宝测试账号
+"""
+账号：wexohi8786@sandbox.com
+密码：111111
+"""
+ALIPAY_APPID = '2016101100657905'
+ALIPAY_DEBUG = True  # 表示是沙箱环境还是真实支付环境
+ALIPAY_URL = 'https://openapi.alipaydev.com/gateway.do'  # 支付宝(沙箱环境)网关
+ALIPAY_RETURN_URL = 'http://www.meiduo.site:8000/payment/status/'  # 回调地址
