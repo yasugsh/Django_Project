@@ -22,4 +22,5 @@ urlpatterns = [
     url(r'^password/$', views.ChangePasswordView.as_view()),
     url(r'^browse_histories/$', views.UserBrowseHistory.as_view()),
     url(r'^orders/info/(?P<page_num>\d+)/$', views.UserOrdersInfoView.as_view()),
+    url(r'^find_password/$', views.FindPasswordView.as_view()),
 ]

@@ -199,6 +199,15 @@ class LoginView(View):
         return response
 
 
+# GET&POST /find_password/
+class FindPasswordView(View):
+    """用户找回密码"""
+
+    def get(self, request):
+
+        return render(request, 'find_password.html')
+
+
 # GET /logout/
 class LogoutView(View):
     """退出登录"""

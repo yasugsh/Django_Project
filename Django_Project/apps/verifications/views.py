@@ -1,6 +1,4 @@
-import random
-import logging
-from django.shortcuts import render
+import random, logging, re, json
 from django.views.generic.base import View
 from django_redis import get_redis_connection
 from django.http import HttpResponse, JsonResponse
@@ -10,6 +8,8 @@ from .libs.captcha.captcha import captcha  # 导入生成验证码的对象
 from . import constants  # 导入常量文件
 # from verifications.libs.yuntongxun.sms import *  # 导入云通讯中发送短信验证码的辅助类
 from celery_tasks.sms.tasks import send_sms_code
+from users.models import User
+from verifications.utils import generate_user_info_signature, check_user_info_signature
 
 
 logger = logging.getLogger('django')
@@ -115,3 +115,148 @@ class SMSCodeView(View):
             'errmsg': '发送短信验证码成功'
         }
         return JsonResponse(data)
+
+
+# GET /accounts/(?P<username>[a-zA-Z0-9_-]{5,20})/sms/token/?text=xxx&image_code_id=xxx
+class CheckImageCodeView(View):
+    """找回密码验证图形验证码"""
+
+    def get(self, request, username):
+
+        image_code_client = request.GET.get('text')
+        uuid = request.GET.get('image_code_id')
+
+        redis_conn = get_redis_connection('verify_code')
+        image_code_server = redis_conn.get('img_%s' % uuid)
+
+        if image_code_server is None:
+            return JsonResponse({"code":RETCODE.IMAGECODEERR, "errmsg": "图形验证码失效"})
+        redis_conn.delete("img_%s" % uuid)
+
+        if image_code_client.lower() != image_code_server.decode().lower():
+            return JsonResponse({"code": RETCODE.IMAGECODEERR, "errmsg": "图形验证码输入错误"})
+
+        try:
+            if re.match(r"^1[3-9]\d{9}", username):
+                user = User.objects.get(mobile=username)
+            else:
+                user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({"code":RETCODE.DBERR, "errmsg": "用户名或手机号不存在"})
+
+        mobile = str(user.mobile)
+        hide_mobile = mobile[0:3] + '****' + mobile[-4:]
+        access_token = generate_user_info_signature(mobile)
+
+        data = {
+            'mobile': hide_mobile,
+            'access_token': access_token
+        }
+
+        return JsonResponse(data=data)
+
+
+# GET /sms_codes/?access_token=xxx
+class SendSMSCodeView(View):
+    """找回密码发送短信验证码"""
+
+    def get(self, request):
+
+        access_token = request.GET.get('access_token')
+        mobile = check_user_info_signature(access_token)
+
+        # 从redis数据库中获取标识
+        redis_conn = get_redis_connection("verify_code")
+        send_flg = redis_conn.get("send_flg_%s" % mobile)
+        # 判斷标识有没有到期
+        if send_flg:
+            return JsonResponse({"code": RETCODE.THROTTLINGERR, "errmsg": "短信发送过于频繁"})
+
+        try:
+            user = User.objects.get(mobile=mobile)
+        except User.DoesNotExist:
+            return JsonResponse({"code": RETCODE.DBERR, "errmsg": "用户名或手机号不存在"})
+
+        sms_code = "%06d" % random.randint(0, 999999)
+        print(sms_code)
+
+        pl = redis_conn.pipeline()
+
+        pl.setex("sms_%s" % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
+        pl.setex("send_flg_%s" % mobile, constants.SMS_CODE_REDIS_EXPIRES, 1)
+
+        pl.execute()
+        # # 手机发短信
+        # CCP().send_template_sms(mobile,[sms_code,constants.SMS_CODE_REDIS_EXPIRES // 60],1)
+
+        send_sms_code.delay(mobile,sms_code)
+
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
+
+
+# GET /accounts/(?P<username>[a-zA-Z0-9_-]{5,20})/password/token/?sms_code=xxx
+class CheckSMSCodeView(View):
+    """找回密码验证短信验证码"""
+
+    def get(self, request, username):
+
+        sms_code_client = request.GET.get('sms_code')
+
+        try:
+            if re.match(r"^1[3-9]\d{9}", username):
+                user = User.objects.get(mobile=username)
+            else:
+                user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({"code":RETCODE.DBERR, "errmsg": "用户名或手机号不存在"})
+
+        redis_conn = get_redis_connection('verify_code')
+        sms_code_server = redis_conn.get('sms_%s' % user.mobile)
+        if sms_code_server is None:
+            return JsonResponse({"code":RETCODE.SMSCODERR, "errmsg": "短信验证码失效"})
+        redis_conn.delete("img_%s" % user.mobile)
+
+        if sms_code_client != sms_code_server.decode():
+            return JsonResponse({"code": RETCODE.SMSCODERR, "errmsg": "短信验证码输入错误"})
+
+        access_token = generate_user_info_signature(user.password)
+
+        data = {
+            'user_id': user.id,
+            'access_token': access_token
+        }
+
+        return JsonResponse(data=data)
+
+
+# POST /users/(?P<user_id>\d+)/password/
+class ResetPasswordView(View):
+    """完成密码重置"""
+
+    def post(self, request, user_id):
+
+        json_dict = json.loads(request.body.decode())
+        pwd = json_dict.get('password')
+        cpwd = json_dict.get('password2')
+        access_token = json_dict.get('access_token')
+
+        if all([pwd, cpwd, access_token]) is False:
+            return JsonResponse({"code": RETCODE.NECESSARYPARAMERR, "message": "缺少必传参数"})
+        if not re.match(r'^[0-9A-Za-z]{8,20}$', pwd):
+            return JsonResponse({"code":RETCODE.CPWDERR, "message": "密码格式错误"})
+        if cpwd != pwd:
+            return JsonResponse({"code":RETCODE.CPWDERR, "message": "两次输入的密码不一致"})
+
+        user_password = check_user_info_signature(access_token)
+        try:
+            user = User.objects.get(id=user_id, password=user_password)
+        except User.DoesNotExist:
+            return JsonResponse({"code":RETCODE.DBERR, "message": "用户不存在"})
+
+        try:
+            user.set_password(pwd)
+            user.save()
+        except:
+            return JsonResponse({"code":RETCODE.DBERR, "message": "修改密码失败"})
+
+        return JsonResponse({'code': RETCODE.OK, 'errmsg': 'OK'})
