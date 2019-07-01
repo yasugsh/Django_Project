@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'goods.apps.GoodsConfig',
     'orders.apps.OrdersConfig',
     'payment.apps.PaymentConfig',
+    'sina.apps.SinaConfig',
 ]
 
 MIDDLEWARE = [
@@ -342,3 +343,8 @@ ALIPAY_APPID = '2016101100657905'
 ALIPAY_DEBUG = True  # 表示是沙箱环境还是真实支付环境
 ALIPAY_URL = 'https://openapi.alipaydev.com/gateway.do'  # 支付宝(沙箱环境)网关
 ALIPAY_RETURN_URL = 'http://www.meiduo.site:8000/payment/status/'  # 回调地址
+
+# 微博登录参数
+SINA_CLIENT_KEY = '3305669385'
+SINA_CLIENT_SECRET = '74c7bea69d5fc64f5c3b80c802325276'
+SINA_REDIRECT_URL = 'http://www.meiduo.site:8000/sina_callback'
