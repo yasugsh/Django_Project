@@ -89,6 +89,32 @@ var vm = new Vue({
                 .catch(error => {
                     console.log(error.response);
                 })
-        }
+        },
+        // 加入购物车
+        // add_cart(){
+        //     var url = this.host + '/carts/';
+        //     axios.post(url, {
+        //             sku_id: parseInt(this.sku_id),
+        //             count: this.sku_count
+        //         }, {
+        //             headers: {
+        //                 'X-CSRFToken':getCookie('csrftoken')
+        //             },
+        //             responseType: 'json',
+        //             withCredentials: true
+        //         })
+        //         .then(response => {
+        //             if (response.data.code == '0') {
+        //                 alert('添加购物车成功');
+        //                 this.cart_total_count += this.sku_count;
+        //                 // this.get_carts();  // 添加成功即刷新简易购物车
+        //             } else { // 参数错误
+        //                 alert(response.data.errmsg);
+        //             }
+        //         })
+        //         .catch(error => {
+        //             console.log(error.response);
+        //         })
+        // },
     }
 });

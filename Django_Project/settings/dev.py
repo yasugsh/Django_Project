@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'haystack',  # 通过Haystack框架来调用Elasticsearch搜索引擎
+    'django_crontab', # 定时任务
 
     # 'users',  # 使用基类AppConfig中的相关配置
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
@@ -128,14 +129,22 @@ WSGI_APPLICATION = 'Django_Project.wsgi.application'
 # }
 
 DATABASES = {
-    'default': {
+    'default': {  # 主机(写)
         'ENGINE': 'django.db.backends.mysql',  # 数据库引擎
-        'HOST': '127.0.0.1',  # 数据库主机
+        'HOST': '192.168.246.128',  # 数据库主机
         'PORT': 3306,  # 数据库端口
         'USER': 'yin',  # 数据库用户名
         'PASSWORD': 'mysql',  # 数据库用户密码
         'NAME': 'Django_Project'  # 数据库名字
     },
+    'slave': {  # 从机(读)
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': '192.168.246.128',
+        'PORT': 3307,
+        'USER': 'root',
+        'PASSWORD': 'mysql',
+        'NAME': 'Django_Project'
+    }
 }
 
 
@@ -184,6 +193,9 @@ STATIC_URL = '/static/'
 # 存放查找静态文件的目录 接收的是list
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
+# 图片上传后保存的文件夹
+MEDIA_ROOT=os.path.join(BASE_DIR, "static/images")
+
 """
 session默认的存储方式，数据库中
 SESSION_ENGINE='django.contrib.sessions.backends.db'
@@ -200,7 +212,7 @@ CACHES = {
     "default": {
         # 后端RedisCache
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/0",
+        "LOCATION": "redis://192.168.246.128:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": "myredis",  # requirepass:myredis
@@ -210,7 +222,7 @@ CACHES = {
     },
     "session": {  # session缓存
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": "redis://192.168.246.128:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": "myredis",  # requirepass:myredis
@@ -220,7 +232,7 @@ CACHES = {
     },
     "verify_code": {  # 图形验证码
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/2",
+        "LOCATION": "redis://192.168.246.128:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": "myredis",
@@ -228,7 +240,7 @@ CACHES = {
     },
     "history": {  # 用户浏览记录
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/3",
+        "LOCATION": "redis://192.168.246.128:6379/3",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": "myredis",
@@ -236,7 +248,7 @@ CACHES = {
     },
     "carts": {  # 登录用户购物车数据
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/4",
+        "LOCATION": "redis://192.168.246.128:6379/4",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "PASSWORD": "myredis",
@@ -348,3 +360,25 @@ ALIPAY_RETURN_URL = 'http://www.meiduo.site:8000/payment/status/'  # 回调地�
 SINA_CLIENT_KEY = '3305669385'
 SINA_CLIENT_SECRET = '74c7bea69d5fc64f5c3b80c802325276'
 SINA_REDIRECT_URL = 'http://www.meiduo.site:8000/sina_callback'
+
+
+CRONJOBS = [
+    # 每1分钟生成一次首页静态文件,指定log输出文件
+    ('*/1 * * * *', 'contents.crons.generate_static_index_html', '>> ' + os.path.join(os.path.dirname(BASE_DIR), 'logs/crontab.log'))
+]
+
+# 解决 crontab 中文问题
+CRONTAB_COMMAND_PREFIX = 'LANG_ALL=zh_cn.UTF-8'
+"""
+添加定时任务到系统中
+python manage.py crontab add
+
+显示已激活的定时任务
+python manage.py crontab show
+
+移除定时任务
+python manage.py crontab remove
+"""
+
+# 配置数据库读写路由
+DATABASE_ROUTERS = ['Django_Project.utils.db_router.MasterSlaveDBRouter']

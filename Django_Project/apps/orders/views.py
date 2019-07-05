@@ -266,11 +266,6 @@ class OrderCommentView(LoginPassMixin):
             try:
                 OrderGoods.objects.filter(sku_id=sku.id, order_id=order.order_id, is_commented=False).update(
                     comment=comment, score=score, is_anonymous=is_anonymous, is_commented = True)
-                # sku.ordergoods_set.comment = comment
-                # sku.ordergoods_set.score = score
-                # sku.ordergoods_set.is_anonymous = is_anonymous
-                # sku.ordergoods_set.is_commented = True
-                # sku.ordergoods_set[0].save()
                 sku.comments += 1
                 sku.save()
                 sku.spu.comments += 1

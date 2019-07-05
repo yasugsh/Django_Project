@@ -211,7 +211,7 @@ class CommentsView(View):
             username = order_good.order.user.username
 
             comment_list.append({
-                'username': username if order_good.is_anonymous is False else '匿名用户',
+                'username': username if order_good.is_anonymous is False else '******',
                 'comment': order_good.comment
             })
 

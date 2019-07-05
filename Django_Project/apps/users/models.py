@@ -11,6 +11,7 @@ class User(AbstractUser):
     email_active = models.BooleanField(default=False, verbose_name='邮箱验证状态')
     # User与Address相互关联，必须创建related_name字段
     default_address = models.ForeignKey('Address', related_name='users', null=True, blank=True, on_delete=models.SET_NULL, verbose_name='默认地址')
+    image = models.ImageField(upload_to='users_image', verbose_name='图片', default=None)
 
     class Meta:
         db_table = "tb_users"
