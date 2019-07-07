@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 
     'haystack',  # 通过Haystack框架来调用Elasticsearch搜索引擎
     'django_crontab', # 定时任务
+    'rest_framework',
 
     # 'users',  # 使用基类AppConfig中的相关配置
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
@@ -111,6 +112,19 @@ TEMPLATES = [
             ],
             # 引入Jinja2模板引擎环境
             'environment': 'Django_Project.utils.jinja2_env.jinja2_environment',
+        },
+    },
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',  # Django自带模板
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
         },
     },
 ]
