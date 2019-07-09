@@ -430,5 +430,5 @@ JWT_AUTH = {
     # datetime.timedelta(days=1)构建一个时间段对象
     'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
     # 指明jwt认证成功返回数据的函数
-    'JWT_RESPONSE_PAYLOAD_HANDLER': 'Django_Project.utils.jwt_response.jwt_response_payload_handler',
+    # 'JWT_RESPONSE_PAYLOAD_HANDLER': 'Django_Project.utils.jwt_response.jwt_response_payload_handler',
 }
