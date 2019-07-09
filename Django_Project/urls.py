@@ -31,4 +31,5 @@ urlpatterns = [
     url(r'^', include('orders.urls', namespace='orders')),
     url(r'^', include('payment.urls', namespace='payment')),
     url(r'^', include('sina.urls', namespace='sina')),
+    url(r'^meiduo_admin/', include('project_admin.urls', namespace='drf_admin')),
 ]

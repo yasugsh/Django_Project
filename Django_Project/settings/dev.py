@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
+import datetime
 import os, sys
 
 """
@@ -322,7 +322,7 @@ LOGGING = {
 AUTH_USER_MODEL = 'users.User'
 
 # 指定自定义的用户认证后端(实现多账号登录)
-AUTHENTICATION_BACKENDS = ['users.utils.UsernameMobileAuthBackend']
+AUTHENTICATION_BACKENDS = ['Django_Project.utils.authenticate.UserAuthenticateBackend']
 
 # 用户在未登录的状态下访问用户中心将被重定向到此url
 LOGIN_URL = '/login/'
@@ -414,3 +414,21 @@ CORS_ORIGIN_WHITELIST = [
 # CORS_ALLOW_METHODS = []
 
 CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端支持对cookie的操作
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 添加JWT认证方式
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
+
+# JWT配置
+JWT_AUTH = {
+    # JWT_EXPIRATION_DELTA 指明token的有效期
+    # datetime.timedelta(days=1)构建一个时间段对象
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+    # 指明jwt认证成功返回数据的函数
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'Django_Project.utils.jwt_response.jwt_response_payload_handler',
+}
