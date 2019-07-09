@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'haystack',  # 通过Haystack框架来调用Elasticsearch搜索引擎
     'django_crontab', # 定时任务
     'rest_framework',
+    'corsheaders',  # django-cors-headers拓展解决跨域
 
     # 'users',  # 使用基类AppConfig中的相关配置
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # 必须放第一位置
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -396,3 +398,19 @@ python manage.py crontab remove
 
 # 配置数据库读写路由
 DATABASE_ROUTERS = ['Django_Project.utils.db_router.MasterSlaveDBRouter']
+
+# 表示允许所有的域名跨域访问本服务器
+# CORS_ORIGIN_ALLOW_ALL = True
+
+# CORS 添加白名单，凡是出现在白名单中的域名，都可以跨域访问本服务器
+CORS_ORIGIN_WHITELIST = [
+    'http://127.0.0.1:8080',
+    'http://localhost:8080',
+    'http://www.meiduo.site:8080',
+    'http://api.meiduo.site:8000'
+]
+
+# 可设置允许跨域访问本服务器的请求方法
+# CORS_ALLOW_METHODS = []
+
+CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端支持对cookie的操作
