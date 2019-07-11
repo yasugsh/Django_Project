@@ -3,6 +3,8 @@ from django.views.generic.base import View
 from django import http
 from django.core.paginator import Paginator, EmptyPage
 from django.utils import timezone
+import pytz
+from django.conf import settings
 
 from .models import GoodsCategory, SKU, GoodsVisitCount
 from contents.utils import get_categories
@@ -228,7 +230,8 @@ class DetailVisitView(View):
         except GoodsCategory.DoesNotExist:
             return http.HttpResponseForbidden('无效的请求参数')
 
-        today_date = timezone.now()  # 获取此时的日期及时间
+        # 获取此时的日期，东八区
+        today_date = timezone.now().astimezone(pytz.timezone(settings.TIME_ZONE))
         try:
             # 查询此类别商品当天有没有被访问过
             category_visit = GoodsVisitCount.objects.get(date=today_date, category=category)

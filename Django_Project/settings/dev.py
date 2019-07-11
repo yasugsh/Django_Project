@@ -199,7 +199,7 @@ USE_I18N = True
 USE_L10N = True
 
 # 为True 数据库时区还是UTC
-USE_TZ = False
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
