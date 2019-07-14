@@ -3,9 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from project_admin.serializers.goods_manage import SKUSerializer, GoodsCategorySerializer, \
-    SPUSimpleSerializer, SPUSpecificationSerializer
+    SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer
 from project_admin.utils import PageNum
-from goods.models import SKU, GoodsCategory, SPU, SPUSpecification
+from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand
 
 
 # /meiduo_admin/skus/?page=<页码>&page_size=<页容量>&keyword=<名称|副标题>
@@ -66,4 +66,46 @@ class SKUViewSet(ModelViewSet):
 
         specification_set = self.get_queryset()
         serializer = self.get_serializer(specification_set, many=True)
+        return Response(serializer.data)
+
+
+# /meiduo_admin/goods/?page=<页码>&page_size=<页容量>
+class SPUViewSet(ModelViewSet):
+    """SPU表管理"""
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'brands':
+            return Brand.objects.all()
+        elif self.action == 'categories':
+            pk = self.kwargs.get("pk")
+            if pk:
+                return GoodsCategory.objects.filter(parent_id=pk)
+            return GoodsCategory.objects.filter(parent=None)
+        else:
+            return SPU.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        if self.action == 'brands':
+            return BrandSerializer
+        elif self.action == 'categories':
+            return GoodsCategorySerializer
+        else:
+            return SPUSerializer
+
+    # GET /meiduo_admin/goods/brands/simple/
+    def brands(self, request):
+        """获取品牌信息"""
+
+        brands = self.get_queryset()
+        serializer = self.get_serializer(brands, many=True)
+        return Response(serializer.data)
+
+    # GET /meiduo_admin/goods/channel/categories/
+    # GET /meiduo_admin/goods/channel/categories/(?P<pk>\d+)/
+    def categories(self, request, pk=None):
+        """获取商品一、二、三级分类信息"""
+
+        categories = self.get_queryset()
+        serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)

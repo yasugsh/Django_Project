@@ -2,11 +2,12 @@ from django.db import transaction
 import logging
 from rest_framework import serializers
 
-from goods.models import SKUSpecification, SKU, GoodsCategory,\
-    SPU, SpecificationOption, SPUSpecification
-
+from goods.models import SKUSpecification, SKU, GoodsCategory, SPU, SpecificationOption, \
+    SPUSpecification, Brand
 
 logger = logging.getLogger('django')
+
+
 class SKUSpecificationSerializer(serializers.ModelSerializer):
     """SKU规格序列化器"""
 
@@ -135,3 +136,28 @@ class SPUSpecificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = SPUSpecification
         fields = ['id', 'name', 'spu_id', 'spu', 'options']
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    """商品品牌模型类序列化器"""
+
+    class Meta:
+        model = Brand
+        fields = '__all__'
+
+
+class SPUSerializer(serializers.ModelSerializer):
+    """SPU模型类序列化器"""
+
+    # SPU模型类默认自动构建关联表id字段，但序列化时不会自动映射此字段
+    brand_id = serializers.IntegerField()
+    category1_id = serializers.IntegerField()
+    category2_id = serializers.IntegerField()
+    category3_id = serializers.IntegerField()
+
+    # 指定所属品牌名称 关联嵌套返回
+    brand = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = SPU
+        exclude = ['category1', 'category2', 'category3']
