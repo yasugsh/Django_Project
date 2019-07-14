@@ -3,9 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from project_admin.serializers.goods_manage import SKUSerializer, GoodsCategorySerializer, \
-    SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer, SPUOptionSerializer
+    SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer, SPUOptionSerializer, \
+    GoodsChannelGroupSerializer, GoodsChannelSerializer
 from project_admin.utils import PageNum
-from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand, SpecificationOption
+from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand, SpecificationOption, \
+    GoodsChannelGroup, GoodsChannel
 
 
 # /meiduo_admin/skus/?page=<页码>&page_size=<页容量>&keyword=<名称|副标题>
@@ -145,4 +147,45 @@ class SpecsOptionsViewSet(ModelViewSet):
 
         specification_set = self.get_queryset()
         serializer = self.get_serializer(specification_set, many=True)
+        return Response(serializer.data)
+
+
+# /meiduo_admin/goods/channels/?page=1&pagesize=10
+class GoodsChannelsViewSet(ModelViewSet):
+    """频道表GoodsChannel管理"""
+
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'channel_types':
+            return GoodsChannelGroup.objects.all()
+        elif self.action == 'primary_categories':
+            return GoodsCategory.objects.filter(parent_id=None)
+        else:
+            return GoodsChannel.objects.all().order_by('group_id')
+
+    def get_serializer_class(self):
+        if self.action == 'channel_types':
+            return GoodsChannelGroupSerializer
+        elif self.action == 'primary_categories':
+            return GoodsCategorySerializer
+        else:
+            return GoodsChannelSerializer
+
+    # GET /meiduo_admin/goods/channel_types/
+    @action(methods=['get'], detail=False)
+    def channel_types(self, request):
+        """获取所有频道分组"""
+
+        channel_types = self.get_queryset()
+        serializer = self.get_serializer(channel_types, many=True)
+        return Response(serializer.data)
+
+    # GET /meiduo_admin/goods/categories/
+    @action(methods=['get'], detail=False)
+    def primary_categories(self, request):
+        """获取商品一级分类"""
+
+        categories = self.get_queryset()
+        serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)

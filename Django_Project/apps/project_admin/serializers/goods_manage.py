@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers
 
 from goods.models import SKUSpecification, SKU, GoodsCategory, SPU, SpecificationOption, \
-    SPUSpecification, Brand
+    SPUSpecification, Brand, GoodsChannel, GoodsChannelGroup
 
 logger = logging.getLogger('django')
 
@@ -161,3 +161,25 @@ class SPUSerializer(serializers.ModelSerializer):
     class Meta:
         model = SPU
         exclude = ['category1', 'category2', 'category3']
+
+
+class GoodsChannelSerializer(serializers.ModelSerializer):
+    """GoodsChannel模型类序列化器"""
+
+    category_id = serializers.IntegerField()
+    group_id = serializers.IntegerField()
+
+    category = serializers.StringRelatedField(read_only=True)
+    group = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = GoodsChannel
+        fields = '__all__'
+
+
+class GoodsChannelGroupSerializer(serializers.ModelSerializer):
+    """GoodsChannelGroup模型类序列化器"""
+
+    class Meta:
+        model = GoodsChannelGroup
+        fields = '__all__'
