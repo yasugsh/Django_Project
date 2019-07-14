@@ -29,7 +29,8 @@ class SKUViewSet(ModelViewSet):
             if not keyword or keyword is None:
                 return SKU.objects.all().order_by('id')
             else:
-                return SKU.objects.filter(name__contains=keyword).order_by('id')
+                # icontains忽略大小写
+                return SKU.objects.filter(name__icontains=keyword).order_by('id')
 
     # 根据请求资源不同返回不同的序列化器
     def get_serializer_class(self):
@@ -45,25 +46,23 @@ class SKUViewSet(ModelViewSet):
     # GET /meiduo_admin/skus/categories/
     @action(methods=['get'], detail=False)
     def categories(self, request):
-        """获取当前SKU的三级分类信息"""
+        """获取三级分类数据"""
 
         categories = self.get_queryset()
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
 
     # GET /meiduo_admin/goods/simple/
-    @action(methods=['get'], detail=False)
     def simple(self, request):
-        """获取SKU的SPU表名称数据"""
+        """获取SPU分类数据"""
 
         spu_set = self.get_queryset()
         serializer = self.get_serializer(spu_set, many=True)
         return Response(serializer.data)
 
     # GET /meiduo_admin/goods/(?P<pk>\d+)/specs/
-    @action(methods=['get'], detail=True)
     def specs(self, request, pk):
-        """获取SPU商品规格信息"""
+        """获取SPU规格数据"""
 
         specification_set = self.get_queryset()
         serializer = self.get_serializer(specification_set, many=True)
