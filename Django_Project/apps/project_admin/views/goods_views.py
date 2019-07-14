@@ -3,9 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from project_admin.serializers.goods_manage import SKUSerializer, GoodsCategorySerializer, \
-    SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer
+    SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer, SPUOptionSerializer
 from project_admin.utils import PageNum
-from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand
+from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand, SpecificationOption
 
 
 # /meiduo_admin/skus/?page=<页码>&page_size=<页容量>&keyword=<名称|副标题>
@@ -108,4 +108,41 @@ class SPUViewSet(ModelViewSet):
 
         categories = self.get_queryset()
         serializer = self.get_serializer(categories, many=True)
+        return Response(serializer.data)
+
+
+# GET /meiduo_admin/goods/specs/?page=1&pagesize=10
+# GET /meiduo_admin/goods/simple/
+class SpecsViewSet(ModelViewSet):
+    """规格表SPUSpecification管理"""
+
+    pagination_class = PageNum
+    queryset = SPUSpecification.objects.all().order_by('spu_id')
+    serializer_class = SPUSpecificationSerializer
+
+
+# GET /meiduo_admin/specs/options/?page=1&pagesize=10
+class SpecsOptionsViewSet(ModelViewSet):
+    """规格选项表SpecificationOption管理"""
+
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'specs':
+            return SPUSpecification.objects.all()
+        else:
+            return SpecificationOption.objects.all().order_by('spec_id')
+
+    def get_serializer_class(self):
+        if self.action == 'specs':
+            return SPUSpecificationSerializer
+        else:
+            return SPUOptionSerializer
+
+    # GET /meiduo_admin/goods/specs/simple/
+    def specs(self, request):
+        """获取SPU所有规格"""
+
+        specification_set = self.get_queryset()
+        serializer = self.get_serializer(specification_set, many=True)
         return Response(serializer.data)

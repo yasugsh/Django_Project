@@ -15,10 +15,13 @@ urlpatterns = [
     url(r'^goods/brands/simple/$', goods_views.SPUViewSet.as_view({'get': 'brands'})),
     url(r'^goods/channel/categories/$', goods_views.SPUViewSet.as_view({'get': 'categories'})),
     url(r'^goods/channel/categories/(?P<pk>\d+)/$', goods_views.SPUViewSet.as_view({'get': 'categories'})),
+    url(r'^goods/specs/simple/$', goods_views.SpecsOptionsViewSet.as_view({'get': 'specs'})),
 ]
 
 router = SimpleRouter()
 router.register(r'statistical', statistical_views.StatisticalViewSet, base_name='statistical')
 router.register(r'skus', goods_views.SKUViewSet, base_name='skus')
+router.register(r'goods/specs', goods_views.SpecsViewSet, base_name='goods_specs')
+router.register(r'specs/options', goods_views.SpecsOptionsViewSet, base_name='specs_options')
 router.register(r'goods', goods_views.SPUViewSet, base_name='goods')
 urlpatterns += router.urls
