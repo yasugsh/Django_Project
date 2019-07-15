@@ -4,6 +4,8 @@ from rest_framework import serializers
 
 from goods.models import SKUSpecification, SKU, GoodsCategory, SPU, SpecificationOption, \
     SPUSpecification, Brand, GoodsChannel, GoodsChannelGroup
+from project_admin.utils import get_fdfs_url
+
 
 logger = logging.getLogger('django')
 
@@ -144,6 +146,29 @@ class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
         fields = '__all__'
+
+    def create(self, validated_data):
+        """重写create方法，实现品牌的logo上传"""
+
+        # 获取前端传递的logo文件对象
+        # logo = open('上传的图片', 'rb')
+        logo = validated_data.pop('logo')
+        # 获取图片上传到FastDFS成功后的url
+
+        logo_url = get_fdfs_url(logo)
+
+        validated_data['logo'] = logo_url
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """重写update方法，实现品牌的logo更新"""
+
+        logo = validated_data.pop('logo')
+        logo_url = get_fdfs_url(logo)
+
+        instance.logo = logo_url
+        instance.save()
+        return instance
 
 
 class SPUSerializer(serializers.ModelSerializer):

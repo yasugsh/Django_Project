@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from project_admin.serializers.goods_manage import SKUSerializer, GoodsCategorySerializer, \
     SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer, SPUOptionSerializer, \
     GoodsChannelGroupSerializer, GoodsChannelSerializer
-from project_admin.utils import PageNum
+from project_admin.utils import PageNum, get_fdfs_url
 from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand, SpecificationOption, \
     GoodsChannelGroup, GoodsChannel
 
@@ -173,7 +173,6 @@ class GoodsChannelsViewSet(ModelViewSet):
             return GoodsChannelSerializer
 
     # GET /meiduo_admin/goods/channel_types/
-    @action(methods=['get'], detail=False)
     def channel_types(self, request):
         """获取所有频道分组"""
 
@@ -182,10 +181,71 @@ class GoodsChannelsViewSet(ModelViewSet):
         return Response(serializer.data)
 
     # GET /meiduo_admin/goods/categories/
-    @action(methods=['get'], detail=False)
     def primary_categories(self, request):
         """获取商品一级分类"""
 
         categories = self.get_queryset()
         serializer = self.get_serializer(categories, many=True)
         return Response(serializer.data)
+
+
+# /meiduo_admin/goods/brands/?page=1&pagesize=10
+# GET /meiduo_admin/goods/categories/
+# GET /meiduo_admin/goods/channel_types/
+class BrandsViewSet(ModelViewSet):
+    """品牌管理"""
+    pagination_class = PageNum
+
+    queryset = Brand.objects.all().order_by('first_letter')
+    serializer_class = BrandSerializer
+
+    # POST /meiduo_admin/goods/brands/
+    # def create(self, request, *args, **kwargs):
+    #     """重写CreateModelMixin拓展类的create方法，实现品牌的logo上传"""
+    #
+    #     # 获取前端传递的logo文件对象
+    #     # logo = open('上传的图片', 'rb')
+    #     logo = request.FILES.get('logo')
+    #     # 获取品牌名称及品牌首字母
+    #     name = request.data.get('name')
+    #     first_letter = request.data.get('first_letter')
+    #
+    #     # 获取图片上传到FastDFS成功后的url
+    #     logo_url = get_fdfs_url(logo)
+    #
+    #     # 保存品牌到数据库
+    #     brand = Brand.objects.create(name=name, first_letter=first_letter, logo=logo_url)
+    #
+    #     return Response({
+    #         'id': brand.id,
+    #         'name': brand.name,
+    #         'first_letter': brand.first_letter,
+    #         'logo': brand.logo.url
+    #     }, status=201)
+    #
+    # PUT /meiduo_admin/goods/brands/(?P<pk>\d+)/
+    # def update(self, request, *args, **kwargs):
+    #     """重写UpdateModelMixin拓展类的update方法，实现品牌数据更新"""
+    #
+    #     # 获取前端传递的logo文件对象
+    #     logo = request.FILES.get('logo')
+    #     # 获取品牌名称及品牌首字母
+    #     name = request.data.get('name')
+    #     first_letter = request.data.get('first_letter')
+    #
+    #     # 获取图片上传到FastDFS成功后的url
+    #     logo_url = get_fdfs_url(logo)
+    #
+    #     # 根据路径参数pk查询要修改的品牌对象
+    #     brand = Brand.objects.get(id=kwargs['pk'])
+    #     brand.logo = logo_url
+    #     brand.name = name
+    #     brand.first_letter = first_letter
+    #     brand.save()
+    #
+    #     return Response({
+    #         'id': brand.id,
+    #         'name': brand.name,
+    #         'first_letter': brand.first_letter,
+    #         'logo': brand.logo.url
+    #     })

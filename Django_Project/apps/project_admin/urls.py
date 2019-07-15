@@ -26,5 +26,6 @@ router.register(r'skus', goods_views.SKUViewSet, base_name='skus')
 router.register(r'goods/specs', goods_views.SpecsViewSet, base_name='goods_specs')
 router.register(r'specs/options', goods_views.SpecsOptionsViewSet, base_name='specs_options')
 router.register(r'goods/channels', goods_views.GoodsChannelsViewSet, base_name='channels')
+router.register(r'goods/brands', goods_views.BrandsViewSet, base_name='brands')
 router.register(r'goods', goods_views.SPUViewSet, base_name='goods')
 urlpatterns += router.urls

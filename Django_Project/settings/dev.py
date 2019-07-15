@@ -348,6 +348,10 @@ DEFAULT_FILE_STORAGE = 'Django_Project.utils.fastdfs.fdfs_storage.FastDFSStorage
 # FDFS_BASE_URL = 'http://192.168.19.132:8888/'
 FDFS_BASE_URL = 'http://image.meiduo.site:8888/'
 
+# 指定连接FastDFS服务器的配置文件
+# FASTDFS_CONF_PATH = 'Django_Project/utils/fastdfs/client.conf'  # 相对路径
+FASTDFS_CONF_PATH = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')  # 绝对路径
+
 # 将Haystack配置为搜索引擎后端
 HAYSTACK_CONNECTIONS = {
     'default': {
