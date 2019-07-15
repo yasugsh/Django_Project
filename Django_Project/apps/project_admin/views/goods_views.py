@@ -284,68 +284,68 @@ class SKUImageViewSet(ModelViewSet):
         return Response(serializer.data)
 
     # POST /meiduo_admin/skus/images/
-    def create(self, request, *args, **kwargs):
-
-        # 获取前端传递的image文件对象
-        image = request.FILES.get('image')
-        # 获取sku_id
-        sku_id = request.data.get('sku')
-
-        # 获取图片上传到FastDFS成功后的url
-        image_url = get_fdfs_url(image)
-
-        # 保存图片url到数据库
-        with transaction.atomic():
-            save_id = transaction.savepoint()
-            try:
-                upload_image = SKUImage.objects.create(sku_id=sku_id, image=image_url)
-
-                sku = SKU.objects.get(id=sku_id)
-                sku.default_image = image_url
-                sku.save()
-            except Exception as e:
-                logger.error(e)
-                transaction.savepoint_rollback(save_id)
-            transaction.savepoint_commit(save_id)
-
-        return Response({
-            'id': upload_image.id,
-            'sku': upload_image.sku_id,
-            'image': upload_image.image.url
-        }, status=201)
-
-    # PUT /meiduo_admin/skus/images/(?P<pk>\d+)/
-    def update(self, request, *args, **kwargs):
-        """重写UpdateModelMixin拓展类的update方法，实现图片更新"""
-
-        # 获取前端传递的image文件对象
-        image = request.FILES.get('image')
-        # 获取sku_id
-        sku_id = request.data.get('sku')
-
-        # 获取图片上传到FastDFS成功后的url
-        image_url = get_fdfs_url(image)
-
-        with transaction.atomic():
-            save_id = transaction.savepoint()
-            try:
-                # 根据路径参数pk查询要修改的图片对象及关联的SKU对象
-                pk_image = SKUImage.objects.get(id=kwargs['pk'])
-                # 更新图片
-                pk_image.image = image_url
-                pk_image.sku_id = sku_id
-                pk_image.save()
-
-                sku = SKU.objects.get(id=sku_id)
-                sku.default_image = image_url
-                sku.save()
-            except Exception as e:
-                logger.error(e)
-                transaction.savepoint_rollback(save_id)
-            transaction.savepoint_commit(save_id)
-
-        return Response({
-            'id': pk_image.id,
-            'sku': pk_image.sku_id,
-            'image': pk_image.image.url
-        })
+    # def create(self, request, *args, **kwargs):
+    #
+    #     # 获取前端传递的image文件对象
+    #     image = request.FILES.get('image')
+    #     # 获取sku_id
+    #     sku_id = request.data.get('sku')
+    #
+    #     # 获取图片上传到FastDFS成功后的url
+    #     image_url = get_fdfs_url(image)
+    #
+    #     # 保存图片url到数据库
+    #     with transaction.atomic():
+    #         save_id = transaction.savepoint()
+    #         try:
+    #             upload_image = SKUImage.objects.create(sku_id=sku_id, image=image_url)
+    #
+    #             sku = SKU.objects.get(id=sku_id)
+    #             sku.default_image = image_url
+    #             sku.save()
+    #         except Exception as e:
+    #             logger.error(e)
+    #             transaction.savepoint_rollback(save_id)
+    #         transaction.savepoint_commit(save_id)
+    #
+    #     return Response({
+    #         'id': upload_image.id,
+    #         'sku': upload_image.sku_id,
+    #         'image': upload_image.image.url
+    #     }, status=201)
+    #
+    # # PUT /meiduo_admin/skus/images/(?P<pk>\d+)/
+    # def update(self, request, *args, **kwargs):
+    #     """重写UpdateModelMixin拓展类的update方法，实现图片更新"""
+    #
+    #     # 获取前端传递的image文件对象
+    #     image = request.FILES.get('image')
+    #     # 获取sku_id
+    #     sku_id = request.data.get('sku')
+    #
+    #     # 获取图片上传到FastDFS成功后的url
+    #     image_url = get_fdfs_url(image)
+    #
+    #     with transaction.atomic():
+    #         save_id = transaction.savepoint()
+    #         try:
+    #             # 根据路径参数pk查询要修改的图片对象及关联的SKU对象
+    #             pk_image = SKUImage.objects.get(id=kwargs['pk'])
+    #             # 更新图片
+    #             pk_image.image = image_url
+    #             pk_image.sku_id = sku_id
+    #             pk_image.save()
+    #
+    #             sku = SKU.objects.get(id=sku_id)
+    #             sku.default_image = image_url
+    #             sku.save()
+    #         except Exception as e:
+    #             logger.error(e)
+    #             transaction.savepoint_rollback(save_id)
+    #         transaction.savepoint_commit(save_id)
+    #
+    #     return Response({
+    #         'id': pk_image.id,
+    #         'sku': pk_image.sku_id,
+    #         'image': pk_image.image.url
+    #     })

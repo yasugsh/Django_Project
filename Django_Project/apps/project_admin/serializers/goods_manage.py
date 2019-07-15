@@ -217,28 +217,37 @@ class SKUImageSerializer(serializers.ModelSerializer):
         model = SKUImage
         fields = '__all__'  # ImageField类型自动序列化为image.url
 
-    # def create(self, validated_data):
-    #     """重写create方法，实现SKUImage表的image上传"""
-    #
-    #     # 获取前端传递的image文件对象
-    #     # image = open('上传的图片', 'rb')
-    #     image = validated_data.pop('image')
-    #
-    #     # 获取图片上传到FastDFS成功后的url
-    #     image_url = get_fdfs_url(image)
-    #     validated_data['image'] = image_url
-    #
-    #     return super().create(validated_data)
-    #
-    # def update(self, instance, validated_data):
-    #     """重写update方法，实现SKUImage表的image更新"""
-    #
-    #     image = validated_data.pop('image')
-    #     image_url = get_fdfs_url(image)
-    #
-    #     instance.image = image_url
-    #     instance.save()
-    #     return instance
+    def create(self, validated_data):
+        """重写create方法，实现SKUImage表的image上传"""
+        """
+        validated_data = {'image': < InMemoryUploadedFile: weibo.png(image/png) >, 
+                        'sku': < SKU: 20: HUAWEIP30 >}
+        """
+
+        # 获取前端传递的image文件对象
+        # image = open('上传的图片', 'rb')
+        image = validated_data.pop('image')
+        sku = validated_data.pop('sku')
+
+        # 获取图片上传到FastDFS成功后的url
+        image_url = get_fdfs_url(image)
+        if not sku.default_image:
+            sku.default_image = image_url
+            sku.save()
+        validated_data['image'] = image_url
+        validated_data['sku'] = sku
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """重写update方法，实现SKUImage表的image更新"""
+
+        image = validated_data.pop('image')
+        image_url = get_fdfs_url(image)
+
+        instance.image = image_url
+        instance.save()
+        return instance
 
 
 class SKUSimpleSerializer(serializers.ModelSerializer):
