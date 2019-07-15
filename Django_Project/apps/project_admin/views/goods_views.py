@@ -1,13 +1,18 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
+import logging
 
 from project_admin.serializers.goods_manage import SKUSerializer, GoodsCategorySerializer, \
     SPUSimpleSerializer, SPUSpecificationSerializer, BrandSerializer, SPUSerializer, SPUOptionSerializer, \
-    GoodsChannelGroupSerializer, GoodsChannelSerializer
+    GoodsChannelGroupSerializer, GoodsChannelSerializer, SKUSimpleSerializer, SKUImageSerializer
 from project_admin.utils import PageNum, get_fdfs_url
 from goods.models import SKU, GoodsCategory, SPU, SPUSpecification, Brand, SpecificationOption, \
-    GoodsChannelGroup, GoodsChannel
+    GoodsChannelGroup, GoodsChannel, SKUImage
+
+
+logger = logging.getLogger('django')
 
 
 # /meiduo_admin/skus/?page=<页码>&page_size=<页容量>&keyword=<名称|副标题>
@@ -249,3 +254,98 @@ class BrandsViewSet(ModelViewSet):
     #         'first_letter': brand.first_letter,
     #         'logo': brand.logo.url
     #     })
+
+
+# GET /meiduo_admin/skus/images/?page=1&pagesize=10
+# GET /meiduo_admin/skus/images/(?P<pk>\d+)/
+# DELETE /meiduo_admin/skus/images/(?P<pk>\d+)/
+class SKUImageViewSet(ModelViewSet):
+    """SKU图片组管理"""
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'skus_simple':
+            return SKU.objects.all()
+        else:
+            return SKUImage.objects.all().order_by('sku_id')
+
+    def get_serializer_class(self):
+        if self.action == 'skus_simple':
+            return SKUSimpleSerializer
+        else:
+            return SKUImageSerializer
+
+    # GET /meiduo_admin/skus/simple/
+    def skus_simple(self, request):
+        """获取所有SKU"""
+
+        skus = self.get_queryset()
+        serializer = self.get_serializer(skus, many=True)
+        return Response(serializer.data)
+
+    # POST /meiduo_admin/skus/images/
+    def create(self, request, *args, **kwargs):
+
+        # 获取前端传递的image文件对象
+        image = request.FILES.get('image')
+        # 获取sku_id
+        sku_id = request.data.get('sku')
+
+        # 获取图片上传到FastDFS成功后的url
+        image_url = get_fdfs_url(image)
+
+        # 保存图片url到数据库
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                upload_image = SKUImage.objects.create(sku_id=sku_id, image=image_url)
+
+                sku = SKU.objects.get(id=sku_id)
+                sku.default_image = image_url
+                sku.save()
+            except Exception as e:
+                logger.error(e)
+                transaction.savepoint_rollback(save_id)
+            transaction.savepoint_commit(save_id)
+
+        return Response({
+            'id': upload_image.id,
+            'sku': upload_image.sku_id,
+            'image': upload_image.image.url
+        }, status=201)
+
+    # PUT /meiduo_admin/skus/images/(?P<pk>\d+)/
+    def update(self, request, *args, **kwargs):
+        """重写UpdateModelMixin拓展类的update方法，实现图片更新"""
+
+        # 获取前端传递的image文件对象
+        image = request.FILES.get('image')
+        # 获取sku_id
+        sku_id = request.data.get('sku')
+
+        # 获取图片上传到FastDFS成功后的url
+        image_url = get_fdfs_url(image)
+
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                # 根据路径参数pk查询要修改的图片对象及关联的SKU对象
+                pk_image = SKUImage.objects.get(id=kwargs['pk'])
+                # 更新图片
+                pk_image.image = image_url
+                pk_image.sku_id = sku_id
+                pk_image.save()
+
+                sku = SKU.objects.get(id=sku_id)
+                sku.default_image = image_url
+                sku.save()
+            except Exception as e:
+                logger.error(e)
+                transaction.savepoint_rollback(save_id)
+            transaction.savepoint_commit(save_id)
+
+        return Response({
+            'id': pk_image.id,
+            'sku': pk_image.sku_id,
+            'image': pk_image.image.url
+        })

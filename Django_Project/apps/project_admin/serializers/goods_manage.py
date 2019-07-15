@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers
 
 from goods.models import SKUSpecification, SKU, GoodsCategory, SPU, SpecificationOption, \
-    SPUSpecification, Brand, GoodsChannel, GoodsChannelGroup
+    SPUSpecification, Brand, GoodsChannel, GoodsChannelGroup, SKUImage
 from project_admin.utils import get_fdfs_url
 
 
@@ -208,3 +208,42 @@ class GoodsChannelGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsChannelGroup
         fields = '__all__'
+
+
+class SKUImageSerializer(serializers.ModelSerializer):
+    """SKUImage模型类序列化器"""
+
+    class Meta:
+        model = SKUImage
+        fields = '__all__'  # ImageField类型自动序列化为image.url
+
+    # def create(self, validated_data):
+    #     """重写create方法，实现SKUImage表的image上传"""
+    #
+    #     # 获取前端传递的image文件对象
+    #     # image = open('上传的图片', 'rb')
+    #     image = validated_data.pop('image')
+    #
+    #     # 获取图片上传到FastDFS成功后的url
+    #     image_url = get_fdfs_url(image)
+    #     validated_data['image'] = image_url
+    #
+    #     return super().create(validated_data)
+    #
+    # def update(self, instance, validated_data):
+    #     """重写update方法，实现SKUImage表的image更新"""
+    #
+    #     image = validated_data.pop('image')
+    #     image_url = get_fdfs_url(image)
+    #
+    #     instance.image = image_url
+    #     instance.save()
+    #     return instance
+
+
+class SKUSimpleSerializer(serializers.ModelSerializer):
+    """SKU模型类小型序列化器"""
+
+    class Meta:
+        model = SKU
+        fields = ['id', 'name', 'default_image']
