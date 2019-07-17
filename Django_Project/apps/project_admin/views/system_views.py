@@ -3,8 +3,9 @@ from rest_framework.response import Response
 
 from project_admin.utils import PageNum
 from project_admin.serializers.system_manage import PermissionSerializer, ContentTypeSerializer, \
-    GroupSerializer
+    GroupSerializer, OperateUserSerializer
 from django.contrib.auth.models import Permission, ContentType, Group
+from users.models import User
 
 
 # /meiduo_admin/permission/perms/?page=1&pagesize=10&ordering=id
@@ -56,4 +57,30 @@ class GroupViewSet(ModelViewSet):
 
         permissions = self.get_queryset()
         serializer = self.get_serializer(permissions, many=True)
+        return Response(serializer.data)
+
+
+# /meiduo_admin/permission/admins/
+class OperateUserViewSet(ModelViewSet):
+    """运营用户管理"""
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'simple':
+            return Group.objects.all().order_by('id')
+        else:
+            return User.objects.filter(is_staff=True).order_by('id')
+
+    def get_serializer_class(self):
+        if self.action == 'simple':
+            return GroupSerializer
+        else:
+            return OperateUserSerializer
+
+    # GET /meiduo_admin/permission/groups/simple/
+    def simple(self, request):
+        """获取用户分组表"""
+
+        groups = self.get_queryset()
+        serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)

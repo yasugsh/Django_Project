@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
             },
         }
 
-    # 1、重写validate方法进行密码加密及is_staff=True
+    # 1、重写validate方法进行用户密码加密
     def validate(self, attrs):
         """
         数据校验或构建，返回的有效数据传递给create方法用来构建新的模型类对象
@@ -32,9 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
         """
         # 将密码加密处理
         attrs['password'] = make_password(attrs['password'])
-        attrs['is_staff'] = True
         return attrs
 
-    # 2、重写create方法进行密码加密及is_staff=True
+    # 2、重写create方法进行用户密码加密
     # def create(self, validated_data):
-    #     return User.objects.create_superuser(**validated_data)
+    #     return User.objects.create_user(**validated_data)

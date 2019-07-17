@@ -36,7 +36,7 @@ from users.models import User
 
 # GET&POST /meiduo_admin/users/?page=<页码>&pagesize=<页容量>&keyword=<搜索内容>
 class UserView(ListCreateAPIView):
-    """用户的查询及新增超级用户"""
+    """商城用户的查询及新增"""
 
     pagination_class = PageNum
     serializer_class = UserSerializer

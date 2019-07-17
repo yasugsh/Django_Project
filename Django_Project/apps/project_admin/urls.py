@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^skus/simple/$', goods_views.SKUImageViewSet.as_view({'get': 'skus_simple'})),
     url(r'^permission/content_types/$', system_views.PermissionViewSet.as_view({'get': 'content_types'})),
     url(r'^permission/simple/$', system_views.GroupViewSet.as_view({'get': 'perms_simple'})),
+    url(r'^permission/groups/simple/$', system_views.OperateUserViewSet.as_view({'get': 'simple'})),
 ]
 
 router = SimpleRouter()
@@ -35,4 +36,5 @@ router.register(r'goods', goods_views.SPUViewSet, base_name='goods')
 router.register(r'orders', orders_views.OrderInfoViewSet, base_name='orders')
 router.register(r'permission/perms', system_views.PermissionViewSet, base_name='permission')
 router.register(r'permission/groups', system_views.GroupViewSet, base_name='groups')
+router.register(r'permission/admins', system_views.OperateUserViewSet, base_name='admins')
 urlpatterns += router.urls
