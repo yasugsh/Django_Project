@@ -2,7 +2,7 @@ from django.conf.urls import url
 from rest_framework_jwt.views import obtain_jwt_token
 from rest_framework.routers import SimpleRouter
 
-from .views import login_views, statistical_views, users_views, goods_views
+from .views import login_views, statistical_views, users_views, goods_views, orders_views
 
 
 urlpatterns = [
@@ -30,4 +30,5 @@ router.register(r'specs/options', goods_views.SpecsOptionsViewSet, base_name='sp
 router.register(r'goods/channels', goods_views.GoodsChannelsViewSet, base_name='channels')
 router.register(r'goods/brands', goods_views.BrandsViewSet, base_name='brands')
 router.register(r'goods', goods_views.SPUViewSet, base_name='goods')
+router.register(r'orders', orders_views.OrderInfoViewSet, base_name='orders')
 urlpatterns += router.urls
