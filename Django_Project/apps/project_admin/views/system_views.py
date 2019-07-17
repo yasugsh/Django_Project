@@ -2,8 +2,9 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 
 from project_admin.utils import PageNum
-from project_admin.serializers.system_manage import PermissionSerializer, ContentTypeSerializer
-from django.contrib.auth.models import Permission, ContentType
+from project_admin.serializers.system_manage import PermissionSerializer, ContentTypeSerializer, \
+    GroupSerializer
+from django.contrib.auth.models import Permission, ContentType, Group
 
 
 # /meiduo_admin/permission/perms/?page=1&pagesize=10&ordering=id
@@ -29,4 +30,30 @@ class PermissionViewSet(ModelViewSet):
 
         content_types = self.get_queryset()
         serializer = self.get_serializer(content_types, many=True)
+        return Response(serializer.data)
+
+
+# /meiduo_admin/permission/groups/
+class GroupViewSet(ModelViewSet):
+    """用户组管理"""
+    pagination_class = PageNum
+
+    def get_queryset(self):
+        if self.action == 'perms_simple':
+            return Permission.objects.all().order_by('id')
+        else:
+            return Group.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        if self.action == 'perms_simple':
+            return PermissionSerializer
+        else:
+            return GroupSerializer
+
+    # GET/meiduo_admin/permission/simple/
+    def perms_simple(self, request):
+        """获取权限表数据"""
+
+        permissions = self.get_queryset()
+        serializer = self.get_serializer(permissions, many=True)
         return Response(serializer.data)
