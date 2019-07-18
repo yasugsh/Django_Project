@@ -59,19 +59,9 @@ class ExpressViewSet(ViewSet):
         serializer = PlaceOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # 创建快递操作对象
-        express = ProjectExpress()
-        result = express.place_order(request_data=serializer.validated_data)
-
-        if result.get('Success'):
-            ExpressInfo.objects.create(
-                order_id=result['Order']['OrderCode'],
-                staff_id=request.user.id,
-                logistic_code=result['Order']['LogisticCode'],  # 快递单号
-                shipper_code=result['Order']['ShipperCode']  # 快递公司编码
-            )
-            return Response({"result": True})
-        return Response({"result": False})
+        # 在djcelery加载过程中会自动查询django安装应用中的tasks.py文件,并从中导入任务函数
+        celery_place_order.delay(data=serializer.validated_data, staff_id=request.user.id)
+        return Response({"result": True})
 
     # GET meiduo_admin/express/(?P<pk>\d+)/prompt_check/
     @action(methods=['get'], detail=True)

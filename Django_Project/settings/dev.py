@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import datetime
 import os, sys
+import djcelery
 
 """
 print(sys.path)
@@ -59,6 +60,7 @@ INSTALLED_APPS = [
     'corsheaders',  # django-cors-headers拓展解决跨域
     'werkzeug_debugger_runserver',
     'django_extensions',
+    'djcelery',  # djcelery实现快递下单接口的异步任务
 
     # 'users',  # 使用基类AppConfig中的相关配置
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
@@ -439,3 +441,10 @@ JWT_AUTH = {
     # 指明jwt认证成功返回数据的函数
     # 'JWT_RESPONSE_PAYLOAD_HANDLER': 'Django_Project.utils.jwt_response.jwt_response_payload_handler',
 }
+
+# 配置djcelery任务
+djcelery.setup_loader()
+BROKER_URL = 'redis://:myredis@127.0.0.1:6379/8'
+CELERY_RESULT_BACKEND = 'redis://:myredis@127.0.0.1:6379/8'
+# 设定导入任务
+CELERY_IMPORTS = ('Django_Project.apps.project_admin.tasks', )
