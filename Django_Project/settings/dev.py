@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'django_crontab', # 定时任务
     'rest_framework',
     'corsheaders',  # django-cors-headers拓展解决跨域
+    'werkzeug_debugger_runserver',
+    'django_extensions',
 
     # 'users',  # 使用基类AppConfig中的相关配置
     'users.apps.UsersConfig',  # 使用自定义配置类users.apps中的配置
