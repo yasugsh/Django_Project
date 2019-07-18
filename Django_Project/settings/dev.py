@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'orders.apps.OrdersConfig',
     'payment.apps.PaymentConfig',
     'sina.apps.SinaConfig',
+    'project_admin.apps.ProjectAdminConfig'
 ]
 
 MIDDLEWARE = [
